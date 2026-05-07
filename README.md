@@ -6,7 +6,7 @@ Phase 1 is focused on the API "Brain": a multi-user REST backend in .NET with Cl
 
 ## Current status
 
-Steps 1-2 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented:
+Steps 1-3 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented:
 
 - solution file is created (`BudgetAnalyzer.slnx`),
 - core projects are bootstrapped under `src/`,
@@ -14,7 +14,9 @@ Steps 1-2 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented
 - project references follow the planned dependency direction,
 - solution build passes,
 - local PostgreSQL is configured via `docker-compose.yml`,
-- development connection string template is set in `src/BudgetAnalyzer.Api/appsettings.Development.json`.
+- development connection string template is set in `src/BudgetAnalyzer.Api/appsettings.Development.json`,
+- domain entities are implemented in `src/BudgetAnalyzer.Domain/Entities`,
+- domain exception base/specializations are implemented in `src/BudgetAnalyzer.Domain/Exceptions`.
 
 ## Solution layout
 
@@ -37,6 +39,6 @@ Run from repo root:
 
 ## Next steps
 
-- Step 3: implement domain entities and domain exceptions.
 - Step 4: define application abstractions (`IRepository<T>`, `IUnitOfWork`, auth/time contracts).
-- Continue with EF Core wiring and first migration.
+- Step 5: wire EF Core persistence and create the first migration.
+- Continue with repository/unit of work implementations.
