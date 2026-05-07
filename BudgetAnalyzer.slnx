@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/BudgetAnalyzer.Api/BudgetAnalyzer.Api.csproj" />
+    <Project Path="src/BudgetAnalyzer.Application/BudgetAnalyzer.Application.csproj" />
+    <Project Path="src/BudgetAnalyzer.Domain/BudgetAnalyzer.Domain.csproj" />
+    <Project Path="src/BudgetAnalyzer.Infrastructure/BudgetAnalyzer.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/BudgetAnalyzer.IntegrationTests/BudgetAnalyzer.IntegrationTests.csproj" />
+    <Project Path="tests/BudgetAnalyzer.UnitTests/BudgetAnalyzer.UnitTests.csproj" />
+  </Folder>
+</Solution>
