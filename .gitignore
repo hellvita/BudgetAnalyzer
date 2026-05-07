@@ -11,3 +11,6 @@
 # IDE folders
 .vs/
 .vscode/
+
+# Local environment variables
+.env
