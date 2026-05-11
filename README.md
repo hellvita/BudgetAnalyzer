@@ -6,7 +6,7 @@ Phase 1 is focused on the API "Brain": a multi-user REST backend in .NET with Cl
 
 ## Current status
 
-Steps 1-4 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented:
+Steps 1-5 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented:
 
 - solution file is created (`BudgetAnalyzer.slnx`),
 - core projects are bootstrapped under `src/`,
@@ -22,7 +22,12 @@ Steps 1-4 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented
   - `IUnitOfWork` with `SaveChangesAsync`,
   - `IPasswordHasher` for hashing and verification,
   - `IJwtTokenService` for issuing auth tokens,
-  - `IClock` for deterministic time access in services/tests.
+  - `IClock` for deterministic time access in services/tests,
+- EF Core persistence is wired in `src/BudgetAnalyzer.Infrastructure/Persistence`:
+  - `AppDbContext` contains DbSets for all core entities and applies entity configurations,
+  - per-entity configurations define table mappings, money precision, unique indexes, and the expense-category FK,
+  - DI registration adds `AppDbContext` with Npgsql in `src/BudgetAnalyzer.Api/Program.cs`,
+  - initial migration files are generated under `src/BudgetAnalyzer.Infrastructure/Persistence/Migrations`.
 
 ## Solution layout
 
@@ -45,5 +50,5 @@ Run from repo root:
 
 ## Next steps
 
-- Step 5: wire EF Core persistence and create the first migration.
-- Step 6+: continue with repository/unit of work implementations and application use cases.
+- Step 6: implement repository and unit of work adapters on top of `AppDbContext`.
+- Step 7+: add authentication, application services, and endpoint workflows.
