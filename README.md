@@ -6,7 +6,7 @@ Phase 1 is focused on the API "Brain": a multi-user REST backend in .NET with Cl
 
 ## Current status
 
-Steps 1-5 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented:
+Steps 1-6 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented:
 
 - solution file is created (`BudgetAnalyzer.slnx`),
 - core projects are bootstrapped under `src/`,
@@ -27,7 +27,11 @@ Steps 1-5 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented
   - `AppDbContext` contains DbSets for all core entities and applies entity configurations,
   - per-entity configurations define table mappings, money precision, unique indexes, and the expense-category FK,
   - DI registration adds `AppDbContext` with Npgsql in `src/BudgetAnalyzer.Api/Program.cs`,
-  - initial migration files are generated under `src/BudgetAnalyzer.Infrastructure/Persistence/Migrations`.
+  - initial migration files are generated under `src/BudgetAnalyzer.Infrastructure/Persistence/Migrations`,
+- EF-backed adapters for application persistence contracts live in `src/BudgetAnalyzer.Infrastructure/Persistence/Repositories`:
+  - `Repository<TEntity>` implements `IRepository<TEntity>` against `AppDbContext`,
+  - `UnitOfWork` implements `IUnitOfWork` and calls `SaveChangesAsync` on the same scoped `AppDbContext`,
+  - `Program.cs` registers `IRepository<>` and `IUnitOfWork` as scoped services.
 
 ## Solution layout
 
@@ -50,5 +54,5 @@ Run from repo root:
 
 ## Next steps
 
-- Step 6: implement repository and unit of work adapters on top of `AppDbContext`.
-- Step 7+: add authentication, application services, and endpoint workflows.
+- Step 7: add authentication (register, login, JWT) and related application services.
+- Step 8+: budget, categories, expenses, and remaining API workflows per the phase plan.
