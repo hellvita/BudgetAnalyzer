@@ -1,4 +1,5 @@
 using BudgetAnalyzer.Application.Auth;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BudgetAnalyzer.Api.Controllers;

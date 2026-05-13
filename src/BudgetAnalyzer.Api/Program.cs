@@ -47,6 +47,7 @@ builder.Services
         };
     });
 builder.Services.AddAuthorization();
+builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<DomainExceptionHandler>();
 
 var app = builder.Build();
