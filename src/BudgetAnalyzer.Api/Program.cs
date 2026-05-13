@@ -1,5 +1,6 @@
 using System.Text;
 using BudgetAnalyzer.Api.Auth;
+using BudgetAnalyzer.Api.Exceptions;
 using BudgetAnalyzer.Application.Abstractions;
 using BudgetAnalyzer.Application.Auth;
 using BudgetAnalyzer.Infrastructure.Auth;
@@ -46,6 +47,7 @@ builder.Services
         };
     });
 builder.Services.AddAuthorization();
+builder.Services.AddExceptionHandler<DomainExceptionHandler>();
 
 var app = builder.Build();
 
@@ -55,6 +57,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseExceptionHandler();
 
 app.UseAuthentication();
 app.UseAuthorization();
