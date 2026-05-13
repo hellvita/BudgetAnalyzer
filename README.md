@@ -6,7 +6,7 @@ Phase 1 is focused on the API "Brain": a multi-user REST backend in .NET with Cl
 
 ## Current status
 
-Steps 1-6 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented:
+Steps 1-7 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented:
 
 - solution file is created (`BudgetAnalyzer.slnx`),
 - core projects are bootstrapped under `src/`,
@@ -32,6 +32,13 @@ Steps 1-6 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented
   - `Repository<TEntity>` implements `IRepository<TEntity>` against `AppDbContext`,
   - `UnitOfWork` implements `IUnitOfWork` and calls `SaveChangesAsync` on the same scoped `AppDbContext`,
   - `Program.cs` registers `IRepository<>` and `IUnitOfWork` as scoped services.
+- Authentication (JWT) is wired in the API and infrastructure:
+  - `POST /api/auth/register` and `POST /api/auth/login` return `{ token, expiresAt }` (`AuthController`, `AuthService`),
+  - passwords are hashed with `BcryptPasswordHasher` (BCrypt work factor 11),
+  - tokens are issued with `JwtTokenService` (HS256; `sub` = user id),
+  - `Jwt` issuer, audience, and expiry live in `appsettings.Development.json`; set **`Jwt__SigningKey`** in `.env` (see `.env.example`) — do not commit real signing keys,
+  - `GET /api/ping` is `[Authorize]`-protected for quick JWT checks (401 without `Authorization: Bearer …`, 200 with a valid token),
+  - `ICurrentUser` is implemented in the API as `CurrentUser` (reads the authenticated user id from claims).
 
 ## Solution layout
 
@@ -48,11 +55,10 @@ Run from repo root:
 
 `dotnet build BudgetAnalyzer.slnx`
 
-`cp .env.example .env` (fill values)
+`cp .env.example .env` (fill values, including `Jwt__SigningKey`; generate a key with e.g. `openssl rand -base64 64`)
 
 `docker compose up -d`
 
 ## Next steps
 
-- Step 7: add authentication (register, login, JWT) and related application services.
 - Step 8+: budget, categories, expenses, and remaining API workflows per the phase plan.
