@@ -49,15 +49,41 @@ Steps 1-7 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented
 - `tests/BudgetAnalyzer.UnitTests` - unit tests.
 - `tests/BudgetAnalyzer.IntegrationTests` - integration tests.
 
-## Validation
+## Local dev setup
 
-Run from repo root:
+**1. Create your secrets file** (gitignored — never committed):
 
-`dotnet build BudgetAnalyzer.slnx`
+```bash
+cp .env.example .env
+```
 
-`cp .env.example .env` (fill values, including `Jwt__SigningKey`; generate a key with e.g. `openssl rand -base64 64`)
+Edit `.env`:
+- Set `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` (used by docker-compose to configure the container).
+- Set `ConnectionStrings__Default` to the full Postgres connection string for the app and `dotnet ef` tools.
+- Generate and set `Jwt__SigningKey`: `openssl rand -base64 64`
 
-`docker compose up -d`
+**2. Start Postgres:**
+
+```bash
+docker compose up -d
+```
+
+**3. Export the ASP.NET Core vars into your shell, then run the API:**
+
+```bash
+export $(grep -v '^#' .env | grep '__' | xargs)
+dotnet run --project src/BudgetAnalyzer.Api
+```
+
+The `grep '__'` filter selects only the `__`-separator vars meant for ASP.NET Core and skips the docker-compose-only `POSTGRES_*` vars. Both sets live in `.env` to keep all local secrets in one place.
+
+**Why env vars instead of JSON placeholders:** ASP.NET Core's configuration system natively reads environment variables using `__` as the section separator (e.g. `Jwt__SigningKey` → `Jwt:SigningKey`). No code changes or extra packages are needed — secrets never touch JSON files.
+
+**Build check:**
+
+```bash
+dotnet build BudgetAnalyzer.slnx
+```
 
 ## Next steps
 
