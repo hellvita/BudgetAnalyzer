@@ -6,7 +6,7 @@ Phase 1 is focused on the API "Brain": a multi-user REST backend in .NET with Cl
 
 ## Current status
 
-Steps 1-6 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented:
+Steps 1-7 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented:
 
 - solution file is created (`BudgetAnalyzer.slnx`),
 - core projects are bootstrapped under `src/`,
@@ -32,6 +32,13 @@ Steps 1-6 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented
   - `Repository<TEntity>` implements `IRepository<TEntity>` against `AppDbContext`,
   - `UnitOfWork` implements `IUnitOfWork` and calls `SaveChangesAsync` on the same scoped `AppDbContext`,
   - `Program.cs` registers `IRepository<>` and `IUnitOfWork` as scoped services.
+- Authentication (JWT) is wired in the API and infrastructure:
+  - `POST /api/auth/register` and `POST /api/auth/login` return `{ token, expiresAt }` (`AuthController`, `AuthService`),
+  - passwords are hashed with `BcryptPasswordHasher` (BCrypt work factor 11),
+  - tokens are issued with `JwtTokenService` (HS256; `sub` = user id),
+  - `Jwt` issuer, audience, and expiry live in `appsettings.Development.json`; set **`Jwt__SigningKey`** in `.env` (see `.env.example`) — do not commit real signing keys,
+  - `GET /api/ping` is `[Authorize]`-protected for quick JWT checks (401 without `Authorization: Bearer …`, 200 with a valid token),
+  - `ICurrentUser` is implemented in the API as `CurrentUser` (reads the authenticated user id from claims).
 
 ## Solution layout
 
@@ -42,17 +49,42 @@ Steps 1-6 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented
 - `tests/BudgetAnalyzer.UnitTests` - unit tests.
 - `tests/BudgetAnalyzer.IntegrationTests` - integration tests.
 
-## Validation
+## Local dev setup
 
-Run from repo root:
+**1. Create your secrets file** (gitignored — never committed):
 
-`dotnet build BudgetAnalyzer.slnx`
+```bash
+cp .env.example .env
+```
 
-`cp .env.example .env` (fill values)
+Edit `.env`:
+- Set `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` (used by docker-compose to configure the container).
+- Set `ConnectionStrings__Default` to the full Postgres connection string for the app and `dotnet ef` tools.
+- Generate and set `Jwt__SigningKey`: `openssl rand -base64 64`
 
-`docker compose up -d`
+**2. Start Postgres:**
+
+```bash
+docker compose up -d
+```
+
+**3. Export the ASP.NET Core vars into your shell, then run the API:**
+
+```bash
+export $(grep -v '^#' .env | grep '__' | xargs)
+dotnet run --project src/BudgetAnalyzer.Api
+```
+
+The `grep '__'` filter selects only the `__`-separator vars meant for ASP.NET Core and skips the docker-compose-only `POSTGRES_*` vars. Both sets live in `.env` to keep all local secrets in one place.
+
+**Why env vars instead of JSON placeholders:** ASP.NET Core's configuration system natively reads environment variables using `__` as the section separator (e.g. `Jwt__SigningKey` → `Jwt:SigningKey`). No code changes or extra packages are needed — secrets never touch JSON files.
+
+**Build check:**
+
+```bash
+dotnet build BudgetAnalyzer.slnx
+```
 
 ## Next steps
 
-- Step 7: add authentication (register, login, JWT) and related application services.
 - Step 8+: budget, categories, expenses, and remaining API workflows per the phase plan.
