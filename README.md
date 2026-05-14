@@ -6,7 +6,7 @@ Phase 1 is focused on the API "Brain": a multi-user REST backend in .NET with Cl
 
 ## Current status
 
-Steps 1-7 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented:
+Steps 1-8 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented:
 
 - solution file is created (`BudgetAnalyzer.slnx`),
 - core projects are bootstrapped under `src/`,
@@ -38,7 +38,11 @@ Steps 1-7 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented
   - tokens are issued with `JwtTokenService` (HS256; `sub` = user id),
   - `Jwt` issuer, audience, and expiry live in `appsettings.Development.json`; set **`Jwt__SigningKey`** in `.env` (see `.env.example`) — do not commit real signing keys,
   - `GET /api/ping` is `[Authorize]`-protected for quick JWT checks (401 without `Authorization: Bearer …`, 200 with a valid token),
-  - `ICurrentUser` is implemented in the API as `CurrentUser` (reads the authenticated user id from claims).
+  - `ICurrentUser` is implemented in the API as `CurrentUser` (reads the authenticated user id from claims),
+- Initial budget endpoint is available under `/api/me`:
+  - `GET /api/me/budget` returns `{ initialBudget }` for the authenticated user,
+  - `PUT /api/me/budget` with `{ initialBudget }` updates the value (must be ≥ 0; missing field returns 400),
+  - implemented in `BudgetService` (Application) and `BudgetController` (Api).
 
 ## Solution layout
 
@@ -87,4 +91,4 @@ dotnet build BudgetAnalyzer.slnx
 
 ## Next steps
 
-- Step 8+: budget, categories, expenses, and remaining API workflows per the phase plan.
+- Step 9+: categories, expenses, incomes, limits, and remaining API workflows per the phase plan.
