@@ -5,6 +5,7 @@ using BudgetAnalyzer.Application.Abstractions;
 using BudgetAnalyzer.Application.Auth;
 using BudgetAnalyzer.Application.Budget;
 using BudgetAnalyzer.Application.Categories;
+using BudgetAnalyzer.Application.Expenses;
 using BudgetAnalyzer.Infrastructure.Auth;
 using BudgetAnalyzer.Infrastructure.Persistence;
 using BudgetAnalyzer.Infrastructure.Persistence.Repositories;
@@ -30,6 +31,7 @@ builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<BudgetService>();
 builder.Services.AddScoped<CategoryService>();
+builder.Services.AddScoped<ExpenseService>();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 
 var jwtKey = builder.Configuration["Jwt:SigningKey"]

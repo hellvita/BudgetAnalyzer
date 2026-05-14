@@ -6,7 +6,7 @@ Phase 1 is focused on the API "Brain": a multi-user REST backend in .NET with Cl
 
 ## Current status
 
-Steps 1-9 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented:
+Steps 1-10 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented:
 
 - solution file is created (`BudgetAnalyzer.slnx`),
 - core projects are bootstrapped under `src/`,
@@ -50,6 +50,12 @@ Steps 1-9 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented
   - `POST /api/categories/{id}/archive` soft-deletes a category (expenses keep their FK; category hidden from default list),
   - `POST /api/categories/{id}/unarchive` restores an archived category (409 if another active category now has the same name),
   - implemented in `CategoryService` (Application) and `CategoriesController` (Api).
+- Expenses are available under `/api/expenses`:
+  - `PUT /api/expenses/{date}/{categoryId}` with `{ amount }` upserts a daily expense (inserts on first call; updates on subsequent calls for the same date+category; amount must be ≥ 0; 404 if category doesn't belong to user; 400 if category is archived),
+  - `DELETE /api/expenses/{date}/{categoryId}` removes the expense row (404 if it doesn't exist),
+  - `GET /api/expenses/by-date/{yyyy-MM-dd}` returns all active categories for the user with their amounts for that date (0 for categories with no entry),
+  - `GET /api/expenses/by-month/{yyyy-MM}` returns a row per calendar day in the month with per-category amounts and a daily total (0 for days/categories with no entries),
+  - implemented in `ExpenseService` (Application) and `ExpensesController` (Api).
 
 ## Solution layout
 
@@ -98,4 +104,4 @@ dotnet build BudgetAnalyzer.slnx
 
 ## Next steps
 
-- Step 10+: expenses, incomes, limits, summary calculations, validation middleware, tests, and final wiring per the phase plan.
+- Step 11+: incomes, limits, summary calculations, validation middleware, tests, and final wiring per the phase plan.
