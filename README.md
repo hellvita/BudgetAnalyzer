@@ -6,7 +6,7 @@ Phase 1 is focused on the API "Brain": a multi-user REST backend in .NET with Cl
 
 ## Current status
 
-Steps 1-13 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented:
+Steps 1-14 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented:
 
 - solution file is created (`BudgetAnalyzer.slnx`),
 - core projects are bootstrapped under `src/`,
@@ -72,6 +72,11 @@ Steps 1-13 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemente
   - `GET /api/summary/month/{yyyy-MM}` returns a per-day breakdown for every calendar day in the month plus monthly totals: total income, total expenses, expenses by category, allowed monthly budget (sum of effective limits per day), total limit diff, and net,
   - `GET /api/summary/all-time` returns initial budget, total income, total expenses, all-time limit diff (summed only over days with activity), current balance (`initialBudget + totalIncome − totalExpenses`), and net,
   - implemented in `SummaryService` (Application) and `SummaryController` (Api).
+- Validation and error handling are centralised in `src/BudgetAnalyzer.Api/Middleware/ExceptionHandlingMiddleware.cs`:
+  - all domain exceptions are mapped to RFC 7807 `application/problem+json` responses: `ValidationException` → 400, `NotFoundException` → 404, `ConflictException` → 409, `UnauthorizedAccessException` → 401,
+  - unhandled exceptions produce a generic 500 response; the full exception is logged server-side via the ASP.NET Core logger,
+  - model-binding failures (missing or malformed fields) are automatically handled by the `[ApiController]` attribute and return a 400 ProblemDetails response,
+  - the middleware runs before `UseAuthentication` and `UseAuthorization` so auth-phase errors are also caught.
 
 ## Solution layout
 
@@ -120,4 +125,4 @@ dotnet build BudgetAnalyzer.slnx
 
 ## Next steps
 
-- Step 14+: validation middleware, tests, and final wiring per the phase plan.
+- Step 15+: unit and integration tests per the phase plan.
