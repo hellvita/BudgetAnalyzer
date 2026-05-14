@@ -6,7 +6,7 @@ Phase 1 is focused on the API "Brain": a multi-user REST backend in .NET with Cl
 
 ## Current status
 
-Steps 1-8 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented:
+Steps 1-9 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented:
 
 - solution file is created (`BudgetAnalyzer.slnx`),
 - core projects are bootstrapped under `src/`,
@@ -43,6 +43,13 @@ Steps 1-8 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented
   - `GET /api/me/budget` returns `{ initialBudget }` for the authenticated user,
   - `PUT /api/me/budget` with `{ initialBudget }` updates the value (must be ≥ 0; missing field returns 400),
   - implemented in `BudgetService` (Application) and `BudgetController` (Api).
+- Categories CRUD is available under `/api/categories`:
+  - `GET /api/categories?includeArchived=false` lists the authenticated user's categories (active only by default),
+  - `POST /api/categories` with `{ name }` creates a new category (409 if an active category with the same name exists),
+  - `PUT /api/categories/{id}` renames a category (404 if not owned by caller; 409 on name conflict),
+  - `POST /api/categories/{id}/archive` soft-deletes a category (expenses keep their FK; category hidden from default list),
+  - `POST /api/categories/{id}/unarchive` restores an archived category (409 if another active category now has the same name),
+  - implemented in `CategoryService` (Application) and `CategoriesController` (Api).
 
 ## Solution layout
 
@@ -91,4 +98,4 @@ dotnet build BudgetAnalyzer.slnx
 
 ## Next steps
 
-- Step 9+: categories, expenses, incomes, limits, and remaining API workflows per the phase plan.
+- Step 10+: expenses, incomes, limits, summary calculations, validation middleware, tests, and final wiring per the phase plan.
