@@ -1,6 +1,6 @@
 using System.Text;
 using BudgetAnalyzer.Api.Auth;
-using BudgetAnalyzer.Api.Exceptions;
+using BudgetAnalyzer.Api.Middleware;
 using BudgetAnalyzer.Application.Abstractions;
 using BudgetAnalyzer.Application.Auth;
 using BudgetAnalyzer.Application.Budget;
@@ -59,8 +59,6 @@ builder.Services
         };
     });
 builder.Services.AddAuthorization();
-builder.Services.AddProblemDetails();
-builder.Services.AddExceptionHandler<DomainExceptionHandler>();
 
 var app = builder.Build();
 
@@ -71,7 +69,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseExceptionHandler();
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();
