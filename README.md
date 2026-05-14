@@ -6,7 +6,7 @@ Phase 1 is focused on the API "Brain": a multi-user REST backend in .NET with Cl
 
 ## Current status
 
-Steps 1-10 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented:
+Steps 1-11 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented:
 
 - solution file is created (`BudgetAnalyzer.slnx`),
 - core projects are bootstrapped under `src/`,
@@ -56,6 +56,11 @@ Steps 1-10 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemente
   - `GET /api/expenses/by-date/{yyyy-MM-dd}` returns all active categories for the user with their amounts for that date (0 for categories with no entry),
   - `GET /api/expenses/by-month/{yyyy-MM}` returns a row per calendar day in the month with per-category amounts and a daily total (0 for days/categories with no entries),
   - implemented in `ExpenseService` (Application) and `ExpensesController` (Api).
+- Daily income is available under `/api/incomes`:
+  - `PUT /api/incomes/{date}` with `{ amount }` upserts the income for that day (one entry per user per date; amount must be ≥ 0),
+  - `DELETE /api/incomes/{date}` removes the income row for that day (404 if it doesn't exist),
+  - `GET /api/incomes/by-month/{yyyy-MM}` returns a row per calendar day in the month with the income amount (0 for days with no entry),
+  - implemented in `IncomeService` (Application) and `IncomesController` (Api).
 
 ## Solution layout
 
@@ -104,4 +109,4 @@ dotnet build BudgetAnalyzer.slnx
 
 ## Next steps
 
-- Step 11+: incomes, limits, summary calculations, validation middleware, tests, and final wiring per the phase plan.
+- Step 12+: limits, summary calculations, validation middleware, tests, and final wiring per the phase plan.
