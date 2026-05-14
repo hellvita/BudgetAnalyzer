@@ -6,7 +6,7 @@ Phase 1 is focused on the API "Brain": a multi-user REST backend in .NET with Cl
 
 ## Current status
 
-Steps 1-12 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented:
+Steps 1-13 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented:
 
 - solution file is created (`BudgetAnalyzer.slnx`),
 - core projects are bootstrapped under `src/`,
@@ -67,6 +67,11 @@ Steps 1-12 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemente
   - `DELETE /api/limits/{effectiveFromDate}` removes that history entry (404 if it doesn't exist),
   - `GetEffectiveAsync(userId, date)` returns the most recent limit amount with `effectiveFromDate ≤ date`, or `null` if no limit has been set yet for any date on or before that day — used by the summary service (Step 13),
   - implemented in `LimitService` (Application) and `LimitsController` (Api).
+- Calculation summaries are available under `/api/summary`:
+  - `GET /api/summary/day/{yyyy-MM-dd}` returns income, expenses by category (active categories with 0 for missing; archived categories only if they have an entry on that day), total expenses, effective limit, limit diff, and net for a single day,
+  - `GET /api/summary/month/{yyyy-MM}` returns a per-day breakdown for every calendar day in the month plus monthly totals: total income, total expenses, expenses by category, allowed monthly budget (sum of effective limits per day), total limit diff, and net,
+  - `GET /api/summary/all-time` returns initial budget, total income, total expenses, all-time limit diff (summed only over days with activity), current balance (`initialBudget + totalIncome − totalExpenses`), and net,
+  - implemented in `SummaryService` (Application) and `SummaryController` (Api).
 
 ## Solution layout
 
@@ -115,4 +120,4 @@ dotnet build BudgetAnalyzer.slnx
 
 ## Next steps
 
-- Step 13+: summary calculations, validation middleware, tests, and final wiring per the phase plan.
+- Step 14+: validation middleware, tests, and final wiring per the phase plan.
