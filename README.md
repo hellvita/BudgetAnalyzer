@@ -6,7 +6,7 @@ Phase 1 is focused on the API "Brain": a multi-user REST backend in .NET with Cl
 
 ## Current status
 
-Steps 1-11 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented:
+Steps 1-12 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemented:
 
 - solution file is created (`BudgetAnalyzer.slnx`),
 - core projects are bootstrapped under `src/`,
@@ -61,6 +61,12 @@ Steps 1-11 from `docs/2026-05-07-budget-analyzer-phase-1-plan.md` are implemente
   - `DELETE /api/incomes/{date}` removes the income row for that day (404 if it doesn't exist),
   - `GET /api/incomes/by-month/{yyyy-MM}` returns a row per calendar day in the month with the income amount (0 for days with no entry),
   - implemented in `IncomeService` (Application) and `IncomesController` (Api).
+- Daily limits (effective-dated) are available under `/api/limits`:
+  - `GET /api/limits` returns the full limit history for the authenticated user, ordered by `effectiveFromDate` ascending,
+  - `PUT /api/limits/{effectiveFromDate}` with `{ amount }` upserts a limit entry — inserts on first call for that date, updates the amount on subsequent calls; amount must be ≥ 0,
+  - `DELETE /api/limits/{effectiveFromDate}` removes that history entry (404 if it doesn't exist),
+  - `GetEffectiveAsync(userId, date)` returns the most recent limit amount with `effectiveFromDate ≤ date`, or `null` if no limit has been set yet for any date on or before that day — used by the summary service (Step 13),
+  - implemented in `LimitService` (Application) and `LimitsController` (Api).
 
 ## Solution layout
 
@@ -109,4 +115,4 @@ dotnet build BudgetAnalyzer.slnx
 
 ## Next steps
 
-- Step 12+: limits, summary calculations, validation middleware, tests, and final wiring per the phase plan.
+- Step 13+: summary calculations, validation middleware, tests, and final wiring per the phase plan.
