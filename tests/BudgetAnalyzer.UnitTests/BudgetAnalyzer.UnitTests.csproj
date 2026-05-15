@@ -19,6 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\BudgetAnalyzer.Application\BudgetAnalyzer.Application.csproj" />
     <ProjectReference Include="..\..\src\BudgetAnalyzer.Domain\BudgetAnalyzer.Domain.csproj" />
+    <ProjectReference Include="..\..\src\BudgetAnalyzer.Infrastructure\BudgetAnalyzer.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
