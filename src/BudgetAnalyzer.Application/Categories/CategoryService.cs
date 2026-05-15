@@ -88,6 +88,30 @@ public class CategoryService
             ?? throw new NotFoundException($"Category {id} not found.");
     }
 
+    public async Task<(Guid id, bool wasCreated)> GetOrCreateAsync(
+        Guid userId, string name, CancellationToken ct = default)
+    {
+        var trimmed = name.Trim();
+        var existing = await _categories.Query()
+            .Where(c => c.UserId == userId && !c.IsArchived && c.Name.ToLower() == trimmed.ToLower())
+            .Select(c => (Guid?)c.Id)
+            .FirstOrDefaultAsync(ct);
+
+        if (existing.HasValue)
+            return (existing.Value, wasCreated: false);
+
+        var category = new Category
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Name = trimmed,
+            IsArchived = false,
+        };
+        _categories.Add(category);
+        await _uow.SaveChangesAsync(ct);
+        return (category.Id, wasCreated: true);
+    }
+
     private async Task ThrowIfNameConflict(Guid userId, string name, Guid? excludeId, CancellationToken ct)
     {
         var conflict = await _categories.Query()
