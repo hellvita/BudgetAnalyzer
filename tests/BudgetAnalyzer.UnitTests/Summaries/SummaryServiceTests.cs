@@ -205,6 +205,7 @@ public class SummaryServiceTests
     [Fact]
     public async Task GetMonth_NoData_ReturnsCorrectDayCountAllZeros()
     {
+        SetupUser();
         SetupCategories();
         SetupExpenses();
         SetupIncomes();
@@ -227,6 +228,7 @@ public class SummaryServiceTests
     public async Task GetMonth_LimitChangesMidMonth_AllowedBudgetIsCorrect()
     {
         // November has 30 days. Limit: first 14 days at 100, days 15-30 at 200
+        SetupUser();
         SetupCategories();
         SetupExpenses();
         SetupIncomes();
@@ -245,6 +247,7 @@ public class SummaryServiceTests
     public async Task GetMonth_WithExpensesAndIncome_TotalsAreCorrect()
     {
         var catId = Guid.NewGuid();
+        SetupUser();
         SetupCategories((catId, "Rent", false));
         SetupExpenses(
             (catId, new DateOnly(2026, 10, 5), 800m),
@@ -263,6 +266,7 @@ public class SummaryServiceTests
     [Fact]
     public async Task GetMonth_NoLimitSet_AllowedBudgetIsZero()
     {
+        SetupUser();
         SetupCategories();
         SetupExpenses();
         SetupIncomes();
