@@ -47,6 +47,13 @@ public class CategoriesController : ControllerBase
         return Ok(category);
     }
 
+    [HttpPost("{id:guid}/merge-into/{targetId:guid}")]
+    public async Task<IActionResult> MergeInto(Guid id, Guid targetId, CancellationToken ct)
+    {
+        await _categoryService.MergeIntoAsync(_currentUser.UserId, id, targetId, ct);
+        return NoContent();
+    }
+
     [HttpPost("{id:guid}/archive")]
     public async Task<IActionResult> Archive(Guid id, CancellationToken ct)
     {

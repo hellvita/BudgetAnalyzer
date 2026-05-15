@@ -179,6 +179,8 @@ POST /categories
 PUT /categories/{id}
 ```
 
+Name conflict check is **case-insensitive** — renaming to `"food"` when `"Food"` already exists returns 409.
+
 **Request**
 
 ```json
@@ -191,7 +193,21 @@ PUT /categories/{id}
 { "id": "3fa85f64-...", "name": "Food & Groceries", "isArchived": false }
 ```
 
-**Errors:** `400` empty name · `404` category not found / not owned by caller · `409` name conflict
+**Errors:** `400` empty name · `404` category not found / not owned by caller · `409` name already taken (case-insensitive)
+
+---
+
+### Merge category into another
+
+```
+POST /categories/{id}/merge-into/{targetId}
+```
+
+Reassigns all expenses from `{id}` (source) to `{targetId}` (target), then permanently deletes the source category. Both categories must be owned by the authenticated user. Use this after a rename conflict — e.g. when an import created `"їжа"` but the user wants its expenses counted under the existing `"food"`.
+
+**Response `204 No Content`**
+
+**Errors:** `400` `id` and `targetId` are the same · `404` source or target not found / not owned by caller
 
 ---
 

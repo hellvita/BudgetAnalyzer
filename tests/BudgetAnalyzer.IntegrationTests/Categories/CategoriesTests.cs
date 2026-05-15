@@ -1,6 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
+using BudgetAnalyzer.Infrastructure.Persistence;
 using BudgetAnalyzer.IntegrationTests.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BudgetAnalyzer.IntegrationTests.Categories;
 
@@ -220,6 +223,123 @@ public class CategoriesTests : IntegrationTestBase
     {
         var response = await Client.GetAsync("/api/categories");
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    // ── Case-insensitive rename ───────────────────────────────────────────────
+
+    // Test W5 — rename to same name different case → 409
+    [Fact]
+    public async Task RenameCategory_CaseInsensitiveConflict_Returns409()
+    {
+        var (token, _) = await RegisterUserAsync(UniqueEmail());
+        var client = CreateAuthenticatedClient(token);
+
+        await client.PostAsJsonAsync("/api/categories", new { name = "Food" });
+        var cat2 = (await (await client.PostAsJsonAsync("/api/categories", new { name = "Dining" }))
+            .Content.ReadFromJsonAsync<CategoryResponse>(JsonOptions))!;
+
+        var response = await client.PutAsJsonAsync($"/api/categories/{cat2.Id}", new { name = "food" });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    // ── Merge ─────────────────────────────────────────────────────────────────
+
+    // Test MG1 — merge success: expenses reassigned, source deleted
+    [Fact]
+    public async Task MergeCategory_Success_ExpensesReassignedAndSourceDeleted()
+    {
+        var (token, userId) = await RegisterUserAsync(UniqueEmail());
+        var client = CreateAuthenticatedClient(token);
+
+        var source = (await (await client.PostAsJsonAsync("/api/categories", new { name = "їжа" }))
+            .Content.ReadFromJsonAsync<CategoryResponse>(JsonOptions))!;
+        var target = (await (await client.PostAsJsonAsync("/api/categories", new { name = "food" }))
+            .Content.ReadFromJsonAsync<CategoryResponse>(JsonOptions))!;
+
+        // Record an expense on the source category
+        await client.PutAsJsonAsync($"/api/expenses/2026-05-01/{source.Id}", new { amount = 42.50 });
+
+        var mergeResponse = await client.PostAsync($"/api/categories/{source.Id}/merge-into/{target.Id}", null);
+        Assert.Equal(HttpStatusCode.NoContent, mergeResponse.StatusCode);
+
+        // Source category no longer exists
+        var list = await (await client.GetAsync("/api/categories"))
+            .Content.ReadFromJsonAsync<List<CategoryResponse>>(JsonOptions);
+        Assert.DoesNotContain(list!, c => c.Id == source.Id);
+
+        // Expense is now under the target category
+        using var scope = Factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var expense = await db.DailyExpenses
+            .FirstOrDefaultAsync(e => e.UserId == userId && e.CategoryId == target.Id);
+        Assert.NotNull(expense);
+        Assert.Equal(42.50m, expense.Amount);
+    }
+
+    // Test MG2 — merge: source not owned by caller → 404
+    [Fact]
+    public async Task MergeCategory_UnknownSource_Returns404()
+    {
+        var (token, _) = await RegisterUserAsync(UniqueEmail());
+        var client = CreateAuthenticatedClient(token);
+
+        var target = (await (await client.PostAsJsonAsync("/api/categories", new { name = "food" }))
+            .Content.ReadFromJsonAsync<CategoryResponse>(JsonOptions))!;
+
+        var response = await client.PostAsync($"/api/categories/{Guid.NewGuid()}/merge-into/{target.Id}", null);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    // Test MG3 — merge: target not owned by caller → 404
+    [Fact]
+    public async Task MergeCategory_UnknownTarget_Returns404()
+    {
+        var (token, _) = await RegisterUserAsync(UniqueEmail());
+        var client = CreateAuthenticatedClient(token);
+
+        var source = (await (await client.PostAsJsonAsync("/api/categories", new { name = "їжа" }))
+            .Content.ReadFromJsonAsync<CategoryResponse>(JsonOptions))!;
+
+        var response = await client.PostAsync($"/api/categories/{source.Id}/merge-into/{Guid.NewGuid()}", null);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    // Test MG4 — merge into self → 400
+    [Fact]
+    public async Task MergeCategory_IntoSelf_Returns400()
+    {
+        var (token, _) = await RegisterUserAsync(UniqueEmail());
+        var client = CreateAuthenticatedClient(token);
+
+        var cat = (await (await client.PostAsJsonAsync("/api/categories", new { name = "food" }))
+            .Content.ReadFromJsonAsync<CategoryResponse>(JsonOptions))!;
+
+        var response = await client.PostAsync($"/api/categories/{cat.Id}/merge-into/{cat.Id}", null);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    // Test MG5 — merge: cross-user isolation (Bob cannot merge Alice's categories) → 404
+    [Fact]
+    public async Task MergeCategory_CrossUser_Returns404()
+    {
+        var (tokenA, _) = await RegisterUserAsync(UniqueEmail());
+        var (tokenB, _) = await RegisterUserAsync(UniqueEmail());
+        var clientA = CreateAuthenticatedClient(tokenA);
+        var clientB = CreateAuthenticatedClient(tokenB);
+
+        var aliceSource = (await (await clientA.PostAsJsonAsync("/api/categories", new { name = "Alice-Source" }))
+            .Content.ReadFromJsonAsync<CategoryResponse>(JsonOptions))!;
+        var aliceTarget = (await (await clientA.PostAsJsonAsync("/api/categories", new { name = "Alice-Target" }))
+            .Content.ReadFromJsonAsync<CategoryResponse>(JsonOptions))!;
+
+        var response = await clientB.PostAsync(
+            $"/api/categories/{aliceSource.Id}/merge-into/{aliceTarget.Id}", null);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     private record CategoryResponse(Guid Id, string Name, bool IsArchived);

@@ -8,12 +8,17 @@ namespace BudgetAnalyzer.Application.Categories;
 public class CategoryService
 {
     private readonly IRepository<Category> _categories;
+    private readonly IRepository<DailyExpense> _expenses;
     private readonly IUnitOfWork _uow;
 
-    public CategoryService(IRepository<Category> categories, IUnitOfWork uow)
+    public CategoryService(
+        IRepository<Category> categories,
+        IRepository<DailyExpense> expenses,
+        IUnitOfWork uow)
     {
         _categories = categories;
-        _uow = uow;
+        _expenses   = expenses;
+        _uow        = uow;
     }
 
     public async Task<List<CategoryResponse>> ListAsync(
@@ -81,13 +86,6 @@ public class CategoryService
         await _uow.SaveChangesAsync(ct);
     }
 
-    private async Task<Category> GetOwnedAsync(Guid userId, Guid id, CancellationToken ct)
-    {
-        return await _categories.Query()
-            .FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId, ct)
-            ?? throw new NotFoundException($"Category {id} not found.");
-    }
-
     public async Task<(Guid id, bool wasCreated)> GetOrCreateAsync(
         Guid userId, string name, CancellationToken ct = default)
     {
@@ -112,13 +110,36 @@ public class CategoryService
         return (category.Id, wasCreated: true);
     }
 
+    public async Task MergeIntoAsync(Guid userId, Guid sourceId, Guid targetId, CancellationToken ct = default)
+    {
+        if (sourceId == targetId)
+            throw new ValidationException("Cannot merge a category into itself.");
+
+        var source = await GetOwnedAsync(userId, sourceId, ct);
+        _         = await GetOwnedAsync(userId, targetId, ct);
+
+        await _expenses.Query()
+            .Where(e => e.CategoryId == sourceId)
+            .ExecuteUpdateAsync(s => s.SetProperty(e => e.CategoryId, targetId), ct);
+
+        _categories.Remove(source);
+        await _uow.SaveChangesAsync(ct);
+    }
+
+    private async Task<Category> GetOwnedAsync(Guid userId, Guid id, CancellationToken ct)
+    {
+        return await _categories.Query()
+            .FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId, ct)
+            ?? throw new NotFoundException($"Category {id} not found.");
+    }
+
     private async Task ThrowIfNameConflict(Guid userId, string name, Guid? excludeId, CancellationToken ct)
     {
         var conflict = await _categories.Query()
             .AnyAsync(c =>
                 c.UserId == userId &&
                 !c.IsArchived &&
-                c.Name == name &&
+                c.Name.ToLower() == name.ToLower() &&
                 c.Id != (excludeId ?? Guid.Empty),
                 ct);
 
