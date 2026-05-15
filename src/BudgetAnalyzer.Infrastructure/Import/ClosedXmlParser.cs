@@ -1,3 +1,4 @@
+using System.Globalization;
 using BudgetAnalyzer.Application.Import;
 using BudgetAnalyzer.Application.Import.Dtos;
 using BudgetAnalyzer.Domain.Exceptions;
@@ -109,23 +110,40 @@ public class ClosedXmlParser : IXlsxParser
         return wb.Worksheets.First();
     }
 
+    private static readonly string[] StringDateFormats =
+        ["dd.MM.yyyy H:mm:ss", "dd.MM.yyyy HH:mm:ss", "dd.MM.yyyy", "d.M.yyyy"];
+
     private static bool TryParseDate(IXLCell cell, out DateOnly date)
     {
         date = default;
         if (cell.IsEmpty()) return false;
 
-        if (cell.DataType == XLDataType.Number || cell.DataType == XLDataType.DateTime)
+        if (cell.DataType == XLDataType.DateTime)
+        {
+            date = DateOnly.FromDateTime(cell.GetDateTime());
+            return true;
+        }
+
+        if (cell.DataType == XLDataType.Number)
         {
             try
             {
-                var dt = DateTime.FromOADate(cell.GetDouble());
-                date = DateOnly.FromDateTime(dt);
+                date = DateOnly.FromDateTime(DateTime.FromOADate(cell.GetDouble()));
                 return true;
             }
             catch { /* fall through */ }
         }
 
-        return DateOnly.TryParse(cell.GetString().Trim(), out date);
+        var raw = cell.GetString().Trim();
+
+        if (DateTime.TryParseExact(raw, StringDateFormats,
+                CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
+        {
+            date = DateOnly.FromDateTime(dt);
+            return true;
+        }
+
+        return DateOnly.TryParse(raw, out date);
     }
 
     private static bool TryParseAmount(IXLCell cell, out decimal amount)
