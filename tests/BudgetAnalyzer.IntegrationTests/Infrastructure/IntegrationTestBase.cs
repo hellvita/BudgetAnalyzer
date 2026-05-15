@@ -76,7 +76,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         return client;
     }
 
-    private static Guid GetUserIdFromToken(string token)
+    protected static Guid GetUserIdFromToken(string token)
     {
         var parts = token.Split('.');
         if (parts.Length != 3) return Guid.Empty;

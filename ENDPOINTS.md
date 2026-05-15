@@ -56,6 +56,22 @@ Authenticates an existing user and returns a fresh JWT.
 
 ---
 
+## Users
+
+### Delete own account
+
+```
+DELETE /users/me
+```
+
+Permanently deletes the authenticated user's account and all associated data (categories, expenses, income records, and daily limits). The email address is freed immediately — a new account can be registered with the same email right away.
+
+**Response `204 No Content`**
+
+**Errors:** `401` missing or invalid token
+
+---
+
 ## Health check
 
 ### Ping (authenticated)
