@@ -12,7 +12,9 @@ Data never leaves your machine: the only external dependency is a local PostgreS
 - **Expenses** — record daily spending per category; query by day or month
 - **Income** — record daily income; query by month
 - **Limits** — effective-dated daily spending limits (full history kept)
-- **Summaries** — rich day / month / all-time calculations: totals, limit diffs, net balance
+- **Summaries** — rich day / month / all-time calculations: totals, limit diffs, net balance, opening balance
+- **Import** — upload an `.xlsx` file through a 3-step wizard (parse → preview → execute); columns are mapped by the caller; scale factor and sign inversion supported; missing categories are created automatically
+- **Export** — download a calendar-month as a formatted `.xlsx` file with a running Balance column
 
 ## Solution layout
 
