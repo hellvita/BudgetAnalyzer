@@ -149,4 +149,97 @@ public class ClosedXmlExportServiceTests
         Assert.True(ws.Cell(1, 1).Style.Font.Bold);
         wb.Dispose();
     }
+
+    // ── Limit columns ────────────────────────────────────────────────────────
+
+    private static MonthSummaryResponse BuildSummaryWithLimit(
+        decimal openingBalance,
+        decimal dailyLimit,
+        params (DateOnly Date, decimal Expense, decimal Income)[] days)
+    {
+        var dayItems = days.Select(d => new MonthSummaryDayItem(
+            d.Date,
+            d.Expense,
+            d.Income,
+            dailyLimit,
+            dailyLimit - d.Expense,
+            d.Income - d.Expense,
+            new List<SummaryExpenseByCategory> { new(CatId, CatName, d.Expense) }
+        )).ToList();
+
+        var totalExpenses = days.Sum(d => d.Expense);
+        var totalIncome   = days.Sum(d => d.Income);
+        var allowedBudget = dailyLimit * days.Length;
+
+        var totals = new MonthTotals(
+            totalExpenses,
+            totalIncome,
+            new List<SummaryExpenseByCategory> { new(CatId, CatName, totalExpenses) },
+            allowedBudget,
+            allowedBudget - totalExpenses,
+            totalIncome - totalExpenses);
+
+        return new MonthSummaryResponse(2026, 5, openingBalance, dayItems, totals);
+    }
+
+    [Fact]
+    public void RenderMonth_WithLimit_ColumnCount_IncludesTwoExtraColumns()
+    {
+        var summary = BuildSummaryWithLimit(1000m, 50m, (new DateOnly(2026, 5, 1), 15m, 0m));
+
+        var bytes = new ClosedXmlExportService().RenderMonth(summary);
+        var (wb, ws) = LoadXlsx(bytes);
+
+        // date + cats + Total Expenses + Income + Net + Limit + Limit Diff + Balance
+        var expectedCols = 1 + summary.MonthTotals.ExpensesByCategory.Count + 1 + 1 + 1 + 2 + 1;
+        Assert.Equal(expectedCols, ws.LastColumnUsed()!.ColumnNumber());
+        Assert.Equal("Limit",      ws.Cell(1, expectedCols - 2).GetString());
+        Assert.Equal("Limit Diff", ws.Cell(1, expectedCols - 1).GetString());
+        Assert.Equal("Balance",    ws.Cell(1, expectedCols).GetString());
+        wb.Dispose();
+    }
+
+    [Fact]
+    public void RenderMonth_WithLimit_DataRows_ShowLimitAndDiff()
+    {
+        var summary = BuildSummaryWithLimit(1000m, 50m, (new DateOnly(2026, 5, 1), 15m, 0m));
+
+        var bytes = new ClosedXmlExportService().RenderMonth(summary);
+        var (wb, ws) = LoadXlsx(bytes);
+
+        // 1 cat → date(1)+cat(1)+total(1)+income(1)+net(1)+limit(1)+limitdiff(1)+balance(1)
+        // colLimit = 6, colLimitDiff = 7
+        Assert.Equal(50.0, ws.Cell(2, 6).GetDouble());
+        Assert.Equal(35.0, ws.Cell(2, 7).GetDouble()); // 50 - 15
+        wb.Dispose();
+    }
+
+    [Fact]
+    public void RenderMonth_WithLimit_TotalsRow_ShowsAllowedBudgetAndTotalDiff()
+    {
+        var summary = BuildSummaryWithLimit(1000m, 50m,
+            (new DateOnly(2026, 5, 1), 15m, 0m),
+            (new DateOnly(2026, 5, 2), 20m, 0m));
+
+        var bytes = new ClosedXmlExportService().RenderMonth(summary);
+        var (wb, ws) = LoadXlsx(bytes);
+
+        int totalsRow = summary.Days.Count + 2;
+        // AllowedMonthlyBudget = 50*2 = 100, TotalLimitDiff = 100 - 35 = 65
+        Assert.Equal(100.0, ws.Cell(totalsRow, 6).GetDouble());
+        Assert.Equal(65.0,  ws.Cell(totalsRow, 7).GetDouble());
+        wb.Dispose();
+    }
+
+    [Fact]
+    public void RenderMonth_WithoutLimit_NoLimitColumns()
+    {
+        var summary = BuildSummary(1000m, (new DateOnly(2026, 5, 1), 15m, 0m));
+
+        var bytes = new ClosedXmlExportService().RenderMonth(summary);
+        var (wb, ws) = LoadXlsx(bytes);
+
+        Assert.Equal("Balance", ws.Cell(1, ws.LastColumnUsed()!.ColumnNumber()).GetString());
+        wb.Dispose();
+    }
 }
