@@ -51,7 +51,7 @@ public class ImportExecuteServiceTests
 
     private ImportExecuteService CreateSut()
     {
-        var categoryService = new CategoryService(_categoryRepo.Object, _uow.Object);
+        var categoryService = new CategoryService(_categoryRepo.Object, _expenseRepo.Object, _uow.Object);
         var expenseService = new ExpenseService(_expenseRepo.Object, _categoryRepo.Object, _uow.Object);
         var incomeService = new IncomeService(_incomeRepo.Object, _uow.Object);
         return new ImportExecuteService(_store.Object, _parser.Object, categoryService, expenseService, incomeService);
