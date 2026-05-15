@@ -18,6 +18,7 @@ public class AppDbContext : DbContext
     public DbSet<DailyExpense> DailyExpenses => Set<DailyExpense>();
     public DbSet<DailyIncome> DailyIncomes => Set<DailyIncome>();
     public DbSet<DailyLimit> DailyLimits => Set<DailyLimit>();
+    public DbSet<RevokedToken> RevokedTokens => Set<RevokedToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

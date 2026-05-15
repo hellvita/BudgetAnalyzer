@@ -13,6 +13,7 @@ public class UserService
     private readonly IRepository<DailyIncome> _incomes;
     private readonly IRepository<DailyLimit> _limits;
     private readonly IUnitOfWork _uow;
+    private readonly ITokenRevocationService _tokenRevocation;
 
     public UserService(
         IRepository<User> users,
@@ -20,7 +21,8 @@ public class UserService
         IRepository<DailyExpense> expenses,
         IRepository<DailyIncome> incomes,
         IRepository<DailyLimit> limits,
-        IUnitOfWork uow)
+        IUnitOfWork uow,
+        ITokenRevocationService tokenRevocation)
     {
         _users = users;
         _categories = categories;
@@ -28,9 +30,10 @@ public class UserService
         _incomes = incomes;
         _limits = limits;
         _uow = uow;
+        _tokenRevocation = tokenRevocation;
     }
 
-    public async Task DeleteAccountAsync(Guid userId, CancellationToken ct = default)
+    public async Task DeleteAccountAsync(Guid userId, string tokenJti, DateTime tokenExpiresAt, CancellationToken ct = default)
     {
         var user = await _users.GetByIdAsync(userId, ct)
             ?? throw new NotFoundException($"User {userId} not found.");
@@ -49,6 +52,7 @@ public class UserService
         _categories.RemoveRange(categories);
 
         _users.Remove(user);
+        _tokenRevocation.Stage(tokenJti, tokenExpiresAt);
         await _uow.SaveChangesAsync(ct);
     }
 }

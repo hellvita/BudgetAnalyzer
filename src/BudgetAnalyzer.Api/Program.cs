@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 using BudgetAnalyzer.Api.Auth;
 using BudgetAnalyzer.Api.Middleware;
@@ -10,6 +12,7 @@ using BudgetAnalyzer.Application.Incomes;
 using BudgetAnalyzer.Application.Limits;
 using BudgetAnalyzer.Application.Summaries;
 using BudgetAnalyzer.Application.Users;
+using BudgetAnalyzer.Api.BackgroundServices;
 using BudgetAnalyzer.Infrastructure.Auth;
 using BudgetAnalyzer.Infrastructure.Persistence;
 using BudgetAnalyzer.Infrastructure.Persistence.Repositories;
@@ -41,6 +44,9 @@ builder.Services.AddScoped<LimitService>();
 builder.Services.AddScoped<SummaryService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+builder.Services.AddScoped<ICurrentToken, CurrentToken>();
+builder.Services.AddScoped<ITokenRevocationService, EfTokenRevocationService>();
+builder.Services.AddHostedService<TokenCleanupService>();
 
 var jwtKey = builder.Configuration["Jwt:SigningKey"]
     ?? throw new InvalidOperationException("Jwt:SigningKey is required.");
@@ -58,6 +64,20 @@ builder.Services
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var jti = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Jti);
+                if (jti is null) { context.Fail("Missing jti claim."); return; }
+
+                var revocation = context.HttpContext.RequestServices
+                    .GetRequiredService<ITokenRevocationService>();
+
+                if (await revocation.IsRevokedAsync(jti, context.HttpContext.RequestAborted))
+                    context.Fail("Token has been revoked.");
+            }
         };
     });
 builder.Services.AddAuthorization();

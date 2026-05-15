@@ -15,6 +15,7 @@ public class UserServiceTests
     private readonly Mock<IRepository<DailyIncome>> _incomeRepo = new();
     private readonly Mock<IRepository<DailyLimit>> _limitRepo = new();
     private readonly Mock<IUnitOfWork> _uow = new();
+    private readonly Mock<ITokenRevocationService> _revocation = new();
 
     private UserService CreateSut() => new(
         _userRepo.Object,
@@ -22,9 +23,12 @@ public class UserServiceTests
         _expenseRepo.Object,
         _incomeRepo.Object,
         _limitRepo.Object,
-        _uow.Object);
+        _uow.Object,
+        _revocation.Object);
 
     private static readonly Guid UserId = Guid.NewGuid();
+    private const string TestJti = "test-jti-guid";
+    private static readonly DateTime TestExpiresAt = DateTime.UtcNow.AddHours(1);
 
     private void SetupUser(bool exists = true)
     {
@@ -50,7 +54,7 @@ public class UserServiceTests
         SetupEmptyRepos();
         var sut = CreateSut();
 
-        await Assert.ThrowsAsync<NotFoundException>(() => sut.DeleteAccountAsync(UserId));
+        await Assert.ThrowsAsync<NotFoundException>(() => sut.DeleteAccountAsync(UserId, TestJti, TestExpiresAt));
     }
 
     [Fact]
@@ -60,10 +64,40 @@ public class UserServiceTests
         SetupEmptyRepos();
         var sut = CreateSut();
 
-        await sut.DeleteAccountAsync(UserId);
+        await sut.DeleteAccountAsync(UserId, TestJti, TestExpiresAt);
 
         _userRepo.Verify(r => r.Remove(It.Is<User>(u => u.Id == UserId)), Times.Once);
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteAccountAsync_StagesTokenRevocation_WithCorrectJtiAndExpiry()
+    {
+        SetupUser();
+        SetupEmptyRepos();
+        var sut = CreateSut();
+
+        await sut.DeleteAccountAsync(UserId, TestJti, TestExpiresAt);
+
+        _revocation.Verify(r => r.Stage(TestJti, TestExpiresAt), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteAccountAsync_RevocationStagedBeforeSave_AtomicWithDeletion()
+    {
+        SetupUser();
+        SetupEmptyRepos();
+        var callOrder = new List<string>();
+        _revocation.Setup(r => r.Stage(It.IsAny<string>(), It.IsAny<DateTime>()))
+            .Callback(() => callOrder.Add("stage"));
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => callOrder.Add("save"))
+            .ReturnsAsync(0);
+
+        var sut = CreateSut();
+        await sut.DeleteAccountAsync(UserId, TestJti, TestExpiresAt);
+
+        Assert.Equal(["stage", "save"], callOrder);
     }
 
     [Fact]
@@ -97,7 +131,7 @@ public class UserServiceTests
 
         var sut = CreateSut();
 
-        await sut.DeleteAccountAsync(UserId);
+        await sut.DeleteAccountAsync(UserId, TestJti, TestExpiresAt);
 
         _expenseRepo.Verify(r => r.RemoveRange(It.Is<IEnumerable<DailyExpense>>(e => e.Count() == 1)), Times.Once);
         _incomeRepo.Verify(r => r.RemoveRange(It.Is<IEnumerable<DailyIncome>>(i => i.Count() == 1)), Times.Once);
@@ -114,7 +148,7 @@ public class UserServiceTests
         SetupEmptyRepos();
         var sut = CreateSut();
 
-        await sut.DeleteAccountAsync(UserId);
+        await sut.DeleteAccountAsync(UserId, TestJti, TestExpiresAt);
 
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
