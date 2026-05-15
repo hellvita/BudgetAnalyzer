@@ -98,6 +98,22 @@ public class SummaryService
         var firstDay = new DateOnly(year, month, 1);
         var lastDay = firstDay.AddMonths(1).AddDays(-1);
 
+        // Opening balance: initial budget + all income before this month − all expenses before this month
+        var initialBudget = await _users.Query()
+            .Where(u => u.Id == userId)
+            .Select(u => u.InitialBudget)
+            .FirstAsync(ct);
+
+        var priorIncome = await _incomes.Query()
+            .Where(i => i.UserId == userId && i.Date < firstDay)
+            .SumAsync(i => (decimal?)i.Amount, ct) ?? 0m;
+
+        var priorExpenses = await _expenses.Query()
+            .Where(e => e.UserId == userId && e.Date < firstDay)
+            .SumAsync(e => (decimal?)e.Amount, ct) ?? 0m;
+
+        var openingBalance = initialBudget + priorIncome - priorExpenses;
+
         var activeCategories = await _categories.Query()
             .Where(c => c.UserId == userId && !c.IsArchived)
             .OrderBy(c => c.Name)
@@ -125,25 +141,7 @@ public class SummaryService
             .Select(l => (l.EffectiveFromDate, l.Amount))
             .ToList();
 
-        var expenseByDay = monthExpenseRows
-            .GroupBy(e => e.Date)
-            .ToDictionary(g => g.Key, g => g.Sum(e => e.Amount));
-
-        var incomeByDay = monthIncomeRows
-            .ToDictionary(i => i.Date, i => i.Amount);
-
-        var days = new List<MonthSummaryDayItem>();
-        for (var day = firstDay; day <= lastDay; day = day.AddDays(1))
-        {
-            var dayExpenses = expenseByDay.TryGetValue(day, out var de) ? de : 0m;
-            var dayIncome = incomeByDay.TryGetValue(day, out var di) ? di : 0m;
-            var effectiveLimit = GetEffectiveLimit(limitTuples, day);
-            var limitDiff = effectiveLimit.HasValue ? effectiveLimit.Value - dayExpenses : (decimal?)null;
-
-            days.Add(new MonthSummaryDayItem(day, dayExpenses, dayIncome, effectiveLimit, limitDiff, dayIncome - dayExpenses));
-        }
-
-        // Month-level expense aggregation: active categories (with 0) + archived ones with entries
+        // Resolve names for all categories that appear in month expenses (active + archived)
         var activeCategoryIds = activeCategories.Select(c => c.Id).ToHashSet();
         var expenseByCategoryInMonth = monthExpenseRows
             .GroupBy(e => e.CategoryId)
@@ -157,6 +155,43 @@ public class SummaryService
                 .ToDictionaryAsync(c => c.Id, c => c.Name, ct)
             : new Dictionary<Guid, string>();
 
+        var categoryNameById = activeCategories
+            .ToDictionary(c => c.Id, c => c.Name)
+            .Concat(archivedNames)
+            .ToDictionary(kv => kv.Key, kv => kv.Value);
+
+        // Per-day per-category breakdown (only days/categories with actual entries)
+        var expensesByDayAndCategory = monthExpenseRows
+            .GroupBy(e => e.Date)
+            .ToDictionary(
+                g => g.Key,
+                g => (IReadOnlyList<SummaryExpenseByCategory>)g
+                    .GroupBy(e => e.CategoryId)
+                    .Select(cg => new SummaryExpenseByCategory(
+                        cg.Key,
+                        categoryNameById.GetValueOrDefault(cg.Key, "Unknown"),
+                        cg.Sum(e => e.Amount)))
+                    .ToList());
+
+        var incomeByDay = monthIncomeRows.ToDictionary(i => i.Date, i => i.Amount);
+
+        var days = new List<MonthSummaryDayItem>();
+        for (var day = firstDay; day <= lastDay; day = day.AddDays(1))
+        {
+            var dayExpensesByCategory = expensesByDayAndCategory.TryGetValue(day, out var dayCats)
+                ? dayCats
+                : Array.Empty<SummaryExpenseByCategory>();
+            var dayExpenses = dayExpensesByCategory.Sum(e => e.Amount);
+            var dayIncome = incomeByDay.TryGetValue(day, out var di) ? di : 0m;
+            var effectiveLimit = GetEffectiveLimit(limitTuples, day);
+            var limitDiff = effectiveLimit.HasValue ? effectiveLimit.Value - dayExpenses : (decimal?)null;
+
+            days.Add(new MonthSummaryDayItem(
+                day, dayExpenses, dayIncome, effectiveLimit, limitDiff,
+                dayIncome - dayExpenses, dayExpensesByCategory));
+        }
+
+        // Month-level totals: active categories (including zeros) + archived ones with entries
         var monthExpensesByCategory = activeCategories
             .Select(c => new SummaryExpenseByCategory(
                 c.Id, c.Name,
@@ -181,7 +216,7 @@ public class SummaryService
             totalLimitDiff,
             totalIncome - totalExpenses);
 
-        return new MonthSummaryResponse(year, month, days, monthTotals);
+        return new MonthSummaryResponse(year, month, openingBalance, days, monthTotals);
     }
 
     public async Task<AllTimeSummaryResponse> GetAllTimeAsync(

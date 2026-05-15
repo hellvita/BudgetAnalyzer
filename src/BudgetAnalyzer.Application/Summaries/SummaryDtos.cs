@@ -17,7 +17,8 @@ public record MonthSummaryDayItem(
     decimal TotalIncome,
     decimal? EffectiveLimit,
     decimal? LimitDiff,
-    decimal Net);
+    decimal Net,
+    IReadOnlyList<SummaryExpenseByCategory> ExpensesByCategory);
 
 public record MonthTotals(
     decimal TotalExpenses,
@@ -30,6 +31,7 @@ public record MonthTotals(
 public record MonthSummaryResponse(
     int Year,
     int Month,
+    decimal OpeningBalance,
     IReadOnlyList<MonthSummaryDayItem> Days,
     MonthTotals MonthTotals);
 
