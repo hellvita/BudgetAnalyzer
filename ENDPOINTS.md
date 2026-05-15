@@ -469,24 +469,36 @@ GET /summary/month/{yyyy-MM}
 
 ```json
 {
+  "year": 2026,
+  "month": 5,
+  "openingBalance": 1057.50,
   "days": [
     {
       "date": "2026-05-01",
-      "income": 200.00,
+      "totalIncome": 200.00,
       "totalExpenses": 42.50,
       "effectiveLimit": 75.00,
       "limitDiff": 32.50,
-      "net": 157.50
+      "net": 157.50,
+      "expensesByCategory": [
+        { "categoryId": "3fa85f64-...", "categoryName": "Groceries", "amount": 42.50 }
+      ]
     }
   ],
-  "totalIncome": 200.00,
-  "totalExpenses": 42.50,
-  "allowedMonthlyBudget": 2325.00,
-  "totalLimitDiff": 32.50,
-  "net": 157.50
+  "monthTotals": {
+    "totalIncome": 200.00,
+    "totalExpenses": 42.50,
+    "allowedMonthlyBudget": 2325.00,
+    "totalLimitDiff": 32.50,
+    "net": 157.50,
+    "expensesByCategory": [
+      { "categoryId": "3fa85f64-...", "categoryName": "Groceries", "amount": 42.50 }
+    ]
+  }
 }
 ```
 
+- `openingBalance` — account balance at the start of the month: `initialBudget + allPriorIncome − allPriorExpenses`
 - `allowedMonthlyBudget` — sum of effective limits across all days in the month
 - `totalLimitDiff` — sum of per-day limit diffs (only days with an effective limit)
 
@@ -514,4 +526,131 @@ GET /summary/all-time
 - `balance` — `initialBudget + totalIncome − totalExpenses`
 - `totalLimitDiff` — summed only over days that have at least one expense or income entry
 - `net` — `totalIncome − totalExpenses`
+
+---
+
+## Import
+
+Upload an `.xlsx` file and import its rows into the database through a 3-step wizard. All three endpoints require authentication.
+
+The file must contain **exactly one sheet**. Row 1 is treated as a header row; data starts at row 2. The caller maps column indices (0-based) to roles: date, one or more expense categories, and income. An optional `scaleFactor` (default `1`) multiplies every amount; `invertSign` (default `false`) negates every amount after scaling. Categories that do not yet exist are created automatically.
+
+### Step 1 — Parse
+
+```
+POST /import/parse
+```
+
+Upload the file. Returns detected non-empty columns and a `fileId` used in the next two steps. The file is stored in a server-side temp directory and deleted after execute completes (or after 1 hour if the wizard is abandoned).
+
+**Request** — `multipart/form-data`, field name `file`, max 10 MB, `.xlsx` only.
+
+**Response `200 OK`**
+
+```json
+{
+  "fileId": "a1b2c3d4...",
+  "columns": [
+    { "index": 0, "letter": "A", "header": "Date",      "samples": ["2025-05-01", "2025-05-02", "2025-05-03"] },
+    { "index": 1, "letter": "B", "header": "Groceries", "samples": ["42.50", "18.00", "35.75"] },
+    { "index": 2, "letter": "C", "header": "Transport", "samples": ["12.00", "0", "8.50"] },
+    { "index": 3, "letter": "D", "header": "Income",    "samples": ["0", "0", "3000.00"] }
+  ]
+}
+```
+
+**Errors:** `400` no file received · `400` not an `.xlsx` file · `400` file contains more than one sheet
+
+---
+
+### Step 2 — Preview
+
+```
+POST /import/preview
+```
+
+Apply a column mapping to the uploaded file and return the first 10 data rows for review. No data is written to the database.
+
+**Request**
+
+```json
+{
+  "fileId": "a1b2c3d4...",
+  "dateColumnIndex": 0,
+  "categoryColumnIndexes": [1, 2],
+  "incomeColumnIndex": 3,
+  "scaleFactor": 1,
+  "invertSign": false
+}
+```
+
+**Response `200 OK`**
+
+```json
+{
+  "totalDataRows": 31,
+  "skippedRows": 0,
+  "preview": [
+    {
+      "date": "2025-05-01",
+      "expenses": [
+        { "categoryName": "Groceries", "amount": 42.50 },
+        { "categoryName": "Transport", "amount": 12.00 }
+      ],
+      "income": 0.00
+    }
+  ]
+}
+```
+
+- `skippedRows` — rows where the date column was unparseable or an expense column contained non-numeric text
+- `preview` — at most 10 rows; the full import processes all `totalDataRows` rows
+
+**Errors:** `404` `fileId` not found (file expired or never uploaded)
+
+---
+
+### Step 3 — Execute
+
+```
+POST /import/execute
+```
+
+Runs the full import: upserts expenses and incomes for every valid row, creates missing categories, and deletes the temp file on success. Zero-amount values are skipped and do not overwrite existing data.
+
+**Request** — same shape as preview.
+
+**Response `200 OK`**
+
+```json
+{
+  "daysImported": 28,
+  "rowsSkipped": 1,
+  "categoriesCreated": ["Groceries", "Transport"],
+  "expensesUpserted": 54,
+  "incomesUpserted": 3
+}
+```
+
+**Errors:** `404` `fileId` not found
+
+---
+
+## Export
+
+### Month export
+
+```
+GET /export/month/{yyyy-MM}
+```
+
+Downloads a calendar-month summary as a formatted `.xlsx` file. The sheet contains one row per day plus a totals row. Columns: `Date | <category 1> | … | Total Expenses | Income | Net | Balance`. The `Balance` column is a running total starting from `openingBalance` (same value as in the month summary).
+
+**Response `200 OK`**
+
+- `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+- `Content-Disposition: attachment; filename*=budget-{yyyy-MM}.xlsx`
+- Body: binary `.xlsx` file
+
+**Errors:** `400` invalid `yyyy-MM` format
 
