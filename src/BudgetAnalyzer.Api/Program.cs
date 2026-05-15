@@ -13,7 +13,12 @@ using BudgetAnalyzer.Application.Limits;
 using BudgetAnalyzer.Application.Summaries;
 using BudgetAnalyzer.Application.Users;
 using BudgetAnalyzer.Api.BackgroundServices;
+using BudgetAnalyzer.Application.Export;
+using BudgetAnalyzer.Application.Import;
 using BudgetAnalyzer.Infrastructure.Auth;
+using BudgetAnalyzer.Infrastructure.BackgroundServices;
+using BudgetAnalyzer.Infrastructure.Export;
+using BudgetAnalyzer.Infrastructure.Import;
 using BudgetAnalyzer.Infrastructure.Persistence;
 using BudgetAnalyzer.Infrastructure.Persistence.Repositories;
 using BudgetAnalyzer.Infrastructure.Time;
@@ -47,6 +52,23 @@ builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddScoped<ICurrentToken, CurrentToken>();
 builder.Services.AddScoped<ITokenRevocationService, EfTokenRevocationService>();
 builder.Services.AddHostedService<TokenCleanupService>();
+
+// Import
+builder.Services.AddSingleton<ITempFileStore, TempFileStore>();
+builder.Services.AddScoped<IXlsxParser, ClosedXmlParser>();
+builder.Services.AddScoped<IImportParseService, ImportParseService>();
+builder.Services.AddScoped<IImportPreviewService, ImportPreviewService>();
+builder.Services.AddScoped<IImportExecuteService, ImportExecuteService>();
+builder.Services.AddHostedService<TempFileCleanupService>();
+
+// Export
+builder.Services.AddScoped<IExportRenderer, ClosedXmlExportService>();
+builder.Services.AddScoped<IExportService, ExportService>();
+
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(opt =>
+{
+    opt.MultipartBodyLengthLimit = 10 * 1024 * 1024;
+});
 
 var jwtKey = builder.Configuration["Jwt:SigningKey"]
     ?? throw new InvalidOperationException("Jwt:SigningKey is required.");
