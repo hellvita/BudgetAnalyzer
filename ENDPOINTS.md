@@ -56,6 +56,20 @@ Authenticates an existing user and returns a fresh JWT.
 
 ---
 
+### Logout
+
+```
+POST /auth/logout
+```
+
+Invalidates the caller's current JWT. Any subsequent request using the same token returns `401`. The user account remains active — a fresh login issues a new valid token.
+
+**Response `204 No Content`**
+
+**Errors:** `401` missing, invalid, or already-revoked token
+
+---
+
 ## Users
 
 ### Delete own account

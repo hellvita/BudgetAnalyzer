@@ -7,7 +7,7 @@ Data never leaves your machine: the only external dependency is a local PostgreS
 ## Features
 
 - **Multi-user** — each user sees only their own data; auth via JWT (HS256)
-- **Account management** — delete your own account and all associated data; the token is immediately invalidated on deletion; same email can be re-registered immediately
+- **Account management** — logout (invalidates current JWT without deleting the account); delete your own account and all associated data; the token is immediately invalidated on both operations; same email can be re-registered immediately after deletion
 - **Categories** — create, rename, archive/unarchive spending categories
 - **Expenses** — record daily spending per category; query by day or month
 - **Income** — record daily income; query by month
