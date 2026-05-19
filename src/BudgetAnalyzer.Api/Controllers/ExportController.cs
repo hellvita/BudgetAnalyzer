@@ -34,6 +34,24 @@ public class ExportController : ControllerBase
             $"budget-{yearMonth}.xlsx");
     }
 
+    [HttpGet("zip")]
+    public async Task<IActionResult> ExportAllZip(CancellationToken ct)
+    {
+        var bytes = await _exportService.GenerateAllMonthsZipAsync(_currentUser.UserId, ct);
+        if (bytes.Length == 0) return NoContent();
+        return File(bytes, "application/zip", "budget-all.zip");
+    }
+
+    [HttpGet("combined")]
+    public async Task<IActionResult> ExportAllCombined(CancellationToken ct)
+    {
+        var bytes = await _exportService.GenerateAllMonthsCombinedAsync(_currentUser.UserId, ct);
+        return File(
+            bytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "budget-all-time.xlsx");
+    }
+
     private static bool TryParseYearMonth(string s, out int year, out int month)
     {
         year = month = 0;

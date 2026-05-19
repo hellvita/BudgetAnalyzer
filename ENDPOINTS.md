@@ -684,3 +684,41 @@ Downloads a calendar-month summary as a formatted `.xlsx` file. The sheet contai
 
 **Errors:** `400` invalid `yyyy-MM` format
 
+---
+
+### ZIP export
+
+```
+GET /export/zip
+```
+
+Downloads all months that have any data for the authenticated user as a `.zip` archive. Each entry in the archive is a per-month `.xlsx` file identical in structure to the month export. Files are named `budget-{yyyy-MM}.xlsx` and are ordered chronologically.
+
+**Response `200 OK`** (at least one month with data)
+
+- `Content-Type: application/zip`
+- `Content-Disposition: attachment; filename=budget-all.zip`
+- Body: binary `.zip` file
+
+**Response `204 No Content`** — user has no data at all (no expenses and no incomes).
+
+**Errors:** none beyond auth.
+
+---
+
+### Combined XLSX export
+
+```
+GET /export/combined
+```
+
+Downloads all months that have any data for the authenticated user as a single `.xlsx` file. One sheet named `All Time` contains every month sequentially: a month header row (bold, blue background), one row per calendar day, a monthly subtotals row (bold), and a final `All Time` totals row (bold, yellow background) after the last month. Category columns are the union of all categories seen across all months.
+
+**Response `200 OK`**
+
+- `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+- `Content-Disposition: attachment; filename=budget-all-time.xlsx`
+- Body: binary `.xlsx` file (contains only headers if the user has no data)
+
+**Errors:** none beyond auth.
+

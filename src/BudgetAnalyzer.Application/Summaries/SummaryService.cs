@@ -219,6 +219,28 @@ public class SummaryService
         return new MonthSummaryResponse(year, month, openingBalance, days, monthTotals);
     }
 
+    public async Task<IReadOnlyList<(int Year, int Month)>> GetMonthsWithDataAsync(
+        Guid userId, CancellationToken ct = default)
+    {
+        var expenseMonths = await _expenses.Query()
+            .Where(e => e.UserId == userId)
+            .Select(e => new { e.Date.Year, e.Date.Month })
+            .Distinct()
+            .ToListAsync(ct);
+
+        var incomeMonths = await _incomes.Query()
+            .Where(i => i.UserId == userId)
+            .Select(i => new { i.Date.Year, i.Date.Month })
+            .Distinct()
+            .ToListAsync(ct);
+
+        return expenseMonths
+            .UnionBy(incomeMonths, x => (x.Year, x.Month))
+            .Select(x => (x.Year, x.Month))
+            .OrderBy(x => x.Year).ThenBy(x => x.Month)
+            .ToList();
+    }
+
     public async Task<AllTimeSummaryResponse> GetAllTimeAsync(
         Guid userId,
         CancellationToken ct = default)
