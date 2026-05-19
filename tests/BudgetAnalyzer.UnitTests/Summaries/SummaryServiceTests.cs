@@ -365,4 +365,116 @@ public class SummaryServiceTests
         // Jan 1 has no effective limit → skipped
         Assert.Equal(0m, result.TotalLimitDiff);
     }
+
+    // ---- GetMonthsWithDataAsync tests ----
+
+    [Fact]
+    public async Task GetMonthsWithData_NoExpensesOrIncomes_ReturnsEmpty()
+    {
+        SetupExpenses();
+        SetupIncomes();
+
+        var result = await CreateSut().GetMonthsWithDataAsync(UserId);
+
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetMonthsWithData_OnlyExpenses_ReturnsExpenseMonths()
+    {
+        var catId = Guid.NewGuid();
+        SetupExpenses(
+            (catId, new DateOnly(2026, 3, 15), 50m),
+            (catId, new DateOnly(2026, 5, 1), 100m));
+        SetupIncomes();
+
+        var result = await CreateSut().GetMonthsWithDataAsync(UserId);
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal((2026, 3), result[0]);
+        Assert.Equal((2026, 5), result[1]);
+    }
+
+    [Fact]
+    public async Task GetMonthsWithData_OnlyIncomes_ReturnsIncomeMonths()
+    {
+        SetupExpenses();
+        SetupIncomes(
+            (new DateOnly(2026, 1, 10), 200m),
+            (new DateOnly(2026, 7, 20), 300m));
+
+        var result = await CreateSut().GetMonthsWithDataAsync(UserId);
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal((2026, 1), result[0]);
+        Assert.Equal((2026, 7), result[1]);
+    }
+
+    [Fact]
+    public async Task GetMonthsWithData_ExpensesAndIncomes_ReturnsUnionSortedChronologically()
+    {
+        var catId = Guid.NewGuid();
+        SetupExpenses(
+            (catId, new DateOnly(2026, 4, 5), 50m),
+            (catId, new DateOnly(2026, 6, 10), 80m));
+        SetupIncomes(
+            (new DateOnly(2026, 2, 1), 200m),
+            (new DateOnly(2026, 6, 15), 300m));  // June is already in expenses → union deduplicates
+
+        var result = await CreateSut().GetMonthsWithDataAsync(UserId);
+
+        Assert.Equal(3, result.Count);
+        Assert.Equal((2026, 2), result[0]);
+        Assert.Equal((2026, 4), result[1]);
+        Assert.Equal((2026, 6), result[2]);
+    }
+
+    [Fact]
+    public async Task GetMonthsWithData_MultipleEntriesSameMonth_ReturnedOnce()
+    {
+        var catId = Guid.NewGuid();
+        SetupExpenses(
+            (catId, new DateOnly(2026, 5, 1), 10m),
+            (catId, new DateOnly(2026, 5, 15), 20m),
+            (catId, new DateOnly(2026, 5, 31), 30m));
+        SetupIncomes();
+
+        var result = await CreateSut().GetMonthsWithDataAsync(UserId);
+
+        Assert.Single(result);
+        Assert.Equal((2026, 5), result[0]);
+    }
+
+    [Fact]
+    public async Task GetMonthsWithData_SpansMultipleYears_SortedByYearThenMonth()
+    {
+        var catId = Guid.NewGuid();
+        SetupExpenses(
+            (catId, new DateOnly(2026, 11, 1), 50m),
+            (catId, new DateOnly(2026, 3, 1), 80m));
+        SetupIncomes(
+            (new DateOnly(2025, 12, 31), 100m),
+            (new DateOnly(2026, 7, 1), 200m));
+
+        var result = await CreateSut().GetMonthsWithDataAsync(UserId);
+
+        Assert.Equal(4, result.Count);
+        Assert.Equal((2025, 12), result[0]);
+        Assert.Equal((2026, 3), result[1]);
+        Assert.Equal((2026, 7), result[2]);
+        Assert.Equal((2026, 11), result[3]);
+    }
+
+    [Fact]
+    public async Task GetMonthsWithData_SameMonthInBothExpensesAndIncomes_NotDuplicated()
+    {
+        var catId = Guid.NewGuid();
+        SetupExpenses((catId, new DateOnly(2026, 8, 5), 40m));
+        SetupIncomes((new DateOnly(2026, 8, 10), 300m));
+
+        var result = await CreateSut().GetMonthsWithDataAsync(UserId);
+
+        Assert.Single(result);
+        Assert.Equal((2026, 8), result[0]);
+    }
 }
