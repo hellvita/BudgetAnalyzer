@@ -211,10 +211,57 @@ public class SummaryTests : IntegrationTestBase
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
+    // Test AA8d — GET all-time/monthly with no token → 401
+    [Fact]
+    public async Task GetAllTimeMonthly_NoToken_Returns401()
+    {
+        var response = await Client.GetAsync("/api/summary/all-time/monthly");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    // Test AA9 — GET all-time/monthly with no data → []
+    [Fact]
+    public async Task GetAllTimeMonthly_NoData_ReturnsEmptyArray()
+    {
+        var (token, _) = await RegisterUserAsync(UniqueEmail());
+        var client = CreateAuthenticatedClient(token);
+
+        var response = await client.GetAsync("/api/summary/all-time/monthly");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var body = await response.Content.ReadFromJsonAsync<List<AllTimeMonthlyItem>>(JsonOptions);
+        Assert.NotNull(body);
+        Assert.Empty(body);
+    }
+
+    // Test AA10 — GET all-time/monthly with data → chronological month summaries
+    [Fact]
+    public async Task GetAllTimeMonthly_WithData_ReturnsMonthSummariesChronologically()
+    {
+        var (token, _) = await RegisterUserAsync(UniqueEmail());
+        var client = CreateAuthenticatedClient(token);
+        var cat = await CreateCategoryAsync(client, "Food");
+
+        await client.PutAsJsonAsync($"/api/expenses/2026-03-10/{cat.Id}", new { amount = 100m });
+        await client.PutAsJsonAsync("/api/incomes/2026-05-01", new { amount = 500m });
+
+        var body = await (await client.GetAsync("/api/summary/all-time/monthly"))
+            .Content.ReadFromJsonAsync<List<AllTimeMonthlyItem>>(JsonOptions);
+
+        Assert.NotNull(body);
+        Assert.Equal(2, body!.Count);
+        Assert.Equal((2026, 3), (body[0].Year, body[0].Month));
+        Assert.Equal(100m, body[0].MonthTotals.TotalExpenses);
+        Assert.Equal((2026, 5), (body[1].Year, body[1].Month));
+        Assert.Equal(500m, body[1].MonthTotals.TotalIncome);
+    }
+
     private record CategoryDto(Guid Id, string Name, bool IsArchived);
     private record DaySummaryResponse(DateOnly Date, decimal Income, decimal TotalExpenses, decimal? EffectiveLimit, decimal? LimitDiff, decimal Net);
     private record MonthSummaryDayItem(DateOnly Date, decimal TotalExpenses, decimal TotalIncome, decimal? EffectiveLimit, decimal? LimitDiff, decimal Net);
     private record MonthTotals(decimal TotalExpenses, decimal TotalIncome, decimal AllowedMonthlyBudget, decimal TotalLimitDiff, decimal Net);
     private record MonthSummaryResponse(int Year, int Month, List<MonthSummaryDayItem> Days, MonthTotals MonthTotals);
     private record AllTimeSummaryResponse(decimal InitialBudget, decimal TotalIncome, decimal TotalExpenses, decimal TotalLimitDiff, decimal CurrentBalance, decimal Net);
+    private record AllTimeMonthlyMonthTotals(decimal TotalExpenses, decimal TotalIncome, decimal Net);
+    private record AllTimeMonthlyItem(int Year, int Month, AllTimeMonthlyMonthTotals MonthTotals);
 }

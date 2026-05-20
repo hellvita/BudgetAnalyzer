@@ -241,6 +241,17 @@ public class SummaryService
             .ToList();
     }
 
+    public async Task<IReadOnlyList<MonthSummaryResponse>> GetAllTimeMonthlyAsync(
+        Guid userId,
+        CancellationToken ct = default)
+    {
+        var months = await GetMonthsWithDataAsync(userId, ct);
+        var results = new List<MonthSummaryResponse>(months.Count);
+        foreach (var (year, month) in months)
+            results.Add(await GetMonthAsync(userId, year, month, ct));
+        return results;
+    }
+
     public async Task<AllTimeSummaryResponse> GetAllTimeAsync(
         Guid userId,
         CancellationToken ct = default)
