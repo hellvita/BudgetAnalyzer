@@ -559,6 +559,39 @@ GET /summary/all-time
 
 ---
 
+### All-time monthly breakdown
+
+```
+GET /summary/all-time/monthly
+```
+
+Returns one `MonthSummaryResponse` for every calendar month in which the authenticated user has at least one expense or income entry. The list is ordered chronologically. Returns an empty array when the user has no data.
+
+**Response `200 OK`**
+
+```json
+[
+  {
+    "year": 2026,
+    "month": 3,
+    "openingBalance": 1057.50,
+    "days": [ "..." ],
+    "monthTotals": { "..." }
+  },
+  {
+    "year": 2026,
+    "month": 4,
+    "openingBalance": 2114.00,
+    "days": [ "..." ],
+    "monthTotals": { "..." }
+  }
+]
+```
+
+Each element has the same shape as the response from `GET /summary/month/{yyyy-MM}`.
+
+---
+
 ## Import
 
 Upload an `.xlsx` file and import its rows into the database through a 3-step wizard. All three endpoints require authentication.

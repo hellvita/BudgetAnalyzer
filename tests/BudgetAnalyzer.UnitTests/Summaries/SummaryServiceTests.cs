@@ -477,4 +477,60 @@ public class SummaryServiceTests
         Assert.Single(result);
         Assert.Equal((2026, 8), result[0]);
     }
+
+    // ---- GetAllTimeMonthlyAsync tests ----
+
+    [Fact]
+    public async Task GetAllTimeMonthly_NoData_ReturnsEmptyList()
+    {
+        SetupUser();
+        SetupExpenses();
+        SetupIncomes();
+        SetupLimits();
+        SetupCategories();
+
+        var result = await CreateSut().GetAllTimeMonthlyAsync(UserId);
+
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetAllTimeMonthly_OneMonthWithData_ReturnsThatMonthSummary()
+    {
+        var catId = Guid.NewGuid();
+        SetupUser();
+        SetupCategories((catId, "Food", false));
+        SetupExpenses((catId, new DateOnly(2026, 5, 10), 75m));
+        SetupIncomes((new DateOnly(2026, 5, 20), 1500m));
+        SetupLimits();
+
+        var result = await CreateSut().GetAllTimeMonthlyAsync(UserId);
+
+        Assert.Single(result);
+        Assert.Equal(2026, result[0].Year);
+        Assert.Equal(5, result[0].Month);
+        Assert.Equal(75m, result[0].MonthTotals.TotalExpenses);
+        Assert.Equal(1500m, result[0].MonthTotals.TotalIncome);
+    }
+
+    [Fact]
+    public async Task GetAllTimeMonthly_MultipleMonths_ReturnsSummariesChronologically()
+    {
+        var catId = Guid.NewGuid();
+        SetupUser();
+        SetupCategories((catId, "General", false));
+        SetupExpenses(
+            (catId, new DateOnly(2026, 7, 1), 50m),
+            (catId, new DateOnly(2026, 1, 15), 30m),
+            (catId, new DateOnly(2026, 3, 10), 20m));
+        SetupIncomes();
+        SetupLimits();
+
+        var result = await CreateSut().GetAllTimeMonthlyAsync(UserId);
+
+        Assert.Equal(3, result.Count);
+        Assert.Equal(1, result[0].Month);
+        Assert.Equal(3, result[1].Month);
+        Assert.Equal(7, result[2].Month);
+    }
 }

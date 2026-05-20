@@ -43,6 +43,13 @@ public class SummaryController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("all-time/monthly")]
+    public async Task<ActionResult<IReadOnlyList<MonthSummaryResponse>>> GetAllTimeMonthly(CancellationToken ct)
+    {
+        var result = await _summaryService.GetAllTimeMonthlyAsync(_currentUser.UserId, ct);
+        return Ok(result);
+    }
+
     private static bool TryParseYearMonth(string value, out int year, out int month)
     {
         year = 0;
