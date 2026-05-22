@@ -1,0 +1,16 @@
+#!/bin/sh
+# Pre-commit hook: runs dotnet format and aborts if any file was changed,
+# giving you a chance to review and stage the formatting fixes before committing.
+
+dotnet format BudgetAnalyzer.slnx
+
+if ! git diff --quiet; then
+    printf '\n'
+    printf '==> dotnet format changed some files.\n'
+    printf '    Review the diff, stage the changes, and commit again:\n'
+    printf '\n'
+    printf '      git add -u\n'
+    printf '      git commit\n'
+    printf '\n'
+    exit 1
+fi

@@ -64,6 +64,25 @@ The `grep '__'` filter selects only ASP.NET Core configuration vars (double-unde
 
 The API starts on `http://localhost:5048` by default.
 
+## Development setup
+
+After cloning, install the pre-commit hook once:
+
+```bash
+./scripts/install-hooks.sh
+```
+
+The hook runs `dotnet format` before every commit. If it reformats any files it aborts the commit so you can review the diff, stage the changes, and commit again:
+
+```bash
+git add -u
+git commit
+```
+
+The hook requires `dotnet` in your PATH (already needed to build and run the project).
+
+> The hook script lives at `scripts/pre-commit` (tracked by git). `install-hooks.sh` copies it into `.git/hooks/`, which git executes but does not track. Any team member must re-run the install script after a fresh clone.
+
 ## Running tests
 
 Tests use [Testcontainers](https://dotnet.testcontainers.org/) — Docker must be running. No extra configuration needed.

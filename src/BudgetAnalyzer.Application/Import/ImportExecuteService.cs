@@ -53,7 +53,8 @@ public class ImportExecuteService : IImportExecuteService
         {
             var (id, wasCreated) = await _categoryService.GetOrCreateAsync(userId, name, ct);
             categoryIdByName[name] = id;
-            if (wasCreated) created.Add(name);
+            if (wasCreated)
+                created.Add(name);
         }
 
         int expensesUpserted = 0, incomesUpserted = 0;
@@ -66,7 +67,8 @@ public class ImportExecuteService : IImportExecuteService
             foreach (var idx in mapping.CategoryColumnIndexes)
             {
                 var amount = row.CategoryAmounts.GetValueOrDefault(idx, 0m);
-                if (amount == 0m) continue;
+                if (amount == 0m)
+                    continue;
 
                 var name = headerByIndex.GetValueOrDefault(idx, $"Column {idx}");
                 var categoryId = categoryIdByName[name];
@@ -82,7 +84,8 @@ public class ImportExecuteService : IImportExecuteService
                 rowHadData = true;
             }
 
-            if (rowHadData) datesImported.Add(row.Date);
+            if (rowHadData)
+                datesImported.Add(row.Date);
         }
 
         _store.Delete(mapping.FileId);

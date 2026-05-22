@@ -2,19 +2,19 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using BudgetAnalyzer.Api.Auth;
+using BudgetAnalyzer.Api.BackgroundServices;
 using BudgetAnalyzer.Api.Middleware;
 using BudgetAnalyzer.Application.Abstractions;
 using BudgetAnalyzer.Application.Auth;
 using BudgetAnalyzer.Application.Budget;
 using BudgetAnalyzer.Application.Categories;
 using BudgetAnalyzer.Application.Expenses;
+using BudgetAnalyzer.Application.Export;
+using BudgetAnalyzer.Application.Import;
 using BudgetAnalyzer.Application.Incomes;
 using BudgetAnalyzer.Application.Limits;
 using BudgetAnalyzer.Application.Summaries;
 using BudgetAnalyzer.Application.Users;
-using BudgetAnalyzer.Api.BackgroundServices;
-using BudgetAnalyzer.Application.Export;
-using BudgetAnalyzer.Application.Import;
 using BudgetAnalyzer.Infrastructure.Auth;
 using BudgetAnalyzer.Infrastructure.BackgroundServices;
 using BudgetAnalyzer.Infrastructure.Export;
@@ -92,7 +92,8 @@ builder.Services
             OnTokenValidated = async context =>
             {
                 var jti = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Jti);
-                if (jti is null) { context.Fail("Missing jti claim."); return; }
+                if (jti is null)
+                { context.Fail("Missing jti claim."); return; }
 
                 var revocation = context.HttpContext.RequestServices
                     .GetRequiredService<ITokenRevocationService>();

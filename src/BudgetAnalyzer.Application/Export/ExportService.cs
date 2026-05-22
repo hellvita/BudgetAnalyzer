@@ -25,7 +25,8 @@ public class ExportService : IExportService
         Guid userId, CancellationToken ct = default)
     {
         var months = await _summaryService.GetMonthsWithDataAsync(userId, ct);
-        if (months.Count == 0) return Array.Empty<byte>();
+        if (months.Count == 0)
+            return Array.Empty<byte>();
 
         using var ms = new MemoryStream();
         using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true))

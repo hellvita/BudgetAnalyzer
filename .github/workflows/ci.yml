@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Build & format ──────────────────────────────────────────────────────────
+  # Verifies the solution compiles and that all files match .editorconfig rules.
+  # Fails fast so format issues surface before test runs.
+  build-and-format:
+    name: Build & Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore BudgetAnalyzer.slnx
+
+      - name: Build
+        run: dotnet build BudgetAnalyzer.slnx --no-restore --no-incremental
+
+      - name: Check formatting
+        # Exits non-zero if any file would be changed by dotnet format.
+        # Developers should run the pre-commit hook locally to avoid hitting this —
+        # see "Development setup" in README.md.
+        run: dotnet format BudgetAnalyzer.slnx --verify-no-changes
+
+  # ── Unit tests ──────────────────────────────────────────────────────────────
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore BudgetAnalyzer.slnx
+
+      - name: Run unit tests
+        run: dotnet test tests/BudgetAnalyzer.UnitTests --no-restore --logger "console;verbosity=normal"
+
+  # ── Integration tests ───────────────────────────────────────────────────────
+  # Uses Testcontainers: the test suite spins up its own Postgres Docker container.
+  # Docker is pre-installed on ubuntu-latest runners, no extra setup needed.
+  # No secrets required — BudgetApiFactory hardcodes throwaway test credentials.
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore BudgetAnalyzer.slnx
+
+      - name: Run integration tests
+        run: dotnet test tests/BudgetAnalyzer.IntegrationTests --no-restore --logger "console;verbosity=normal"

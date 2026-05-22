@@ -16,7 +16,7 @@ public class ExportController : ControllerBase
     public ExportController(IExportService exportService, ICurrentUser currentUser)
     {
         _exportService = exportService;
-        _currentUser   = currentUser;
+        _currentUser = currentUser;
     }
 
     [HttpGet("month/{yearMonth}")]
@@ -38,7 +38,8 @@ public class ExportController : ControllerBase
     public async Task<IActionResult> ExportAllZip(CancellationToken ct)
     {
         var bytes = await _exportService.GenerateAllMonthsZipAsync(_currentUser.UserId, ct);
-        if (bytes.Length == 0) return NoContent();
+        if (bytes.Length == 0)
+            return NoContent();
         return File(bytes, "application/zip", "budget-all.zip");
     }
 

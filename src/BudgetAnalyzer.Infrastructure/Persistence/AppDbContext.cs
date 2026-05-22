@@ -35,21 +35,43 @@ public class AppDbContext : DbContext
             {
                 switch (entry.Entity)
                 {
-                    case User u: u.CreatedAt = now; u.UpdatedAt = now; break;
-                    case Category c: c.CreatedAt = now; c.UpdatedAt = now; break;
-                    case DailyExpense e: e.CreatedAt = now; e.UpdatedAt = now; break;
-                    case DailyIncome i: i.CreatedAt = now; i.UpdatedAt = now; break;
-                    case DailyLimit l: l.CreatedAt = now; break;
+                    case User u:
+                        u.CreatedAt = now;
+                        u.UpdatedAt = now;
+                        break;
+                    case Category c:
+                        c.CreatedAt = now;
+                        c.UpdatedAt = now;
+                        break;
+                    case DailyExpense e:
+                        e.CreatedAt = now;
+                        e.UpdatedAt = now;
+                        break;
+                    case DailyIncome i:
+                        i.CreatedAt = now;
+                        i.UpdatedAt = now;
+                        break;
+                    case DailyLimit l:
+                        l.CreatedAt = now;
+                        break;
                 }
             }
             else if (entry.State == EntityState.Modified)
             {
                 switch (entry.Entity)
                 {
-                    case User u: u.UpdatedAt = now; break;
-                    case Category c: c.UpdatedAt = now; break;
-                    case DailyExpense e: e.UpdatedAt = now; break;
-                    case DailyIncome i: i.UpdatedAt = now; break;
+                    case User u:
+                        u.UpdatedAt = now;
+                        break;
+                    case Category c:
+                        c.UpdatedAt = now;
+                        break;
+                    case DailyExpense e:
+                        e.UpdatedAt = now;
+                        break;
+                    case DailyIncome i:
+                        i.UpdatedAt = now;
+                        break;
                 }
             }
         }

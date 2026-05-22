@@ -15,26 +15,26 @@ public class ClosedXmlExportService : IExportRenderer
         bool hasLimit = summary.Days.Any(d => d.EffectiveLimit.HasValue);
 
         // Column positions (1-based)
-        int colDate      = 1;
-        int colCatBase   = 2;
-        int colTotal     = colCatBase + cats.Count;
-        int colIncome    = colTotal + 1;
-        int colNet       = colIncome + 1;
-        int colLimit     = hasLimit ? colNet + 1 : 0;
+        int colDate = 1;
+        int colCatBase = 2;
+        int colTotal = colCatBase + cats.Count;
+        int colIncome = colTotal + 1;
+        int colNet = colIncome + 1;
+        int colLimit = hasLimit ? colNet + 1 : 0;
         int colLimitDiff = hasLimit ? colNet + 2 : 0;
-        int colBalance   = hasLimit ? colNet + 3 : colNet + 1;
-        int lastCol      = colBalance;
+        int colBalance = hasLimit ? colNet + 3 : colNet + 1;
+        int lastCol = colBalance;
 
         // Header row
         ws.Cell(1, colDate).Value = "Date";
         for (int i = 0; i < cats.Count; i++)
             ws.Cell(1, colCatBase + i).Value = cats[i].CategoryName;
-        ws.Cell(1, colTotal).Value   = "Total Expenses";
-        ws.Cell(1, colIncome).Value  = "Income";
-        ws.Cell(1, colNet).Value     = "Net";
+        ws.Cell(1, colTotal).Value = "Total Expenses";
+        ws.Cell(1, colIncome).Value = "Income";
+        ws.Cell(1, colNet).Value = "Net";
         if (hasLimit)
         {
-            ws.Cell(1, colLimit).Value     = "Limit";
+            ws.Cell(1, colLimit).Value = "Limit";
             ws.Cell(1, colLimitDiff).Value = "Limit Diff";
         }
         ws.Cell(1, colBalance).Value = "Balance";
@@ -62,9 +62,9 @@ public class ClosedXmlExportService : IExportRenderer
                 ws.Cell(row, colCatBase + i).Value = (double)(match?.Amount ?? 0m);
             }
 
-            ws.Cell(row, colTotal).Value   = (double)day.TotalExpenses;
-            ws.Cell(row, colIncome).Value  = (double)day.TotalIncome;
-            ws.Cell(row, colNet).Value     = (double)day.Net;
+            ws.Cell(row, colTotal).Value = (double)day.TotalExpenses;
+            ws.Cell(row, colIncome).Value = (double)day.TotalIncome;
+            ws.Cell(row, colNet).Value = (double)day.Net;
             if (hasLimit)
             {
                 if (day.EffectiveLimit.HasValue)
@@ -82,12 +82,12 @@ public class ClosedXmlExportService : IExportRenderer
         for (int i = 0; i < cats.Count; i++)
             ws.Cell(totalsRow, colCatBase + i).Value = (double)cats[i].Amount;
 
-        ws.Cell(totalsRow, colTotal).Value   = (double)summary.MonthTotals.TotalExpenses;
-        ws.Cell(totalsRow, colIncome).Value  = (double)summary.MonthTotals.TotalIncome;
-        ws.Cell(totalsRow, colNet).Value     = (double)summary.MonthTotals.Net;
+        ws.Cell(totalsRow, colTotal).Value = (double)summary.MonthTotals.TotalExpenses;
+        ws.Cell(totalsRow, colIncome).Value = (double)summary.MonthTotals.TotalIncome;
+        ws.Cell(totalsRow, colNet).Value = (double)summary.MonthTotals.Net;
         if (hasLimit)
         {
-            ws.Cell(totalsRow, colLimit).Value     = (double)summary.MonthTotals.AllowedMonthlyBudget;
+            ws.Cell(totalsRow, colLimit).Value = (double)summary.MonthTotals.AllowedMonthlyBudget;
             ws.Cell(totalsRow, colLimitDiff).Value = (double)summary.MonthTotals.TotalLimitDiff;
         }
         ws.Cell(totalsRow, colBalance).Value = (double)runningBalance;
@@ -118,25 +118,25 @@ public class ClosedXmlExportService : IExportRenderer
             .SelectMany(s => s.Days)
             .Any(d => d.EffectiveLimit.HasValue);
 
-        int colDate      = 1;
-        int colCatBase   = 2;
-        int colTotal     = colCatBase + allCats.Count;
-        int colIncome    = colTotal + 1;
-        int colNet       = colIncome + 1;
-        int colLimit     = hasLimit ? colNet + 1 : 0;
+        int colDate = 1;
+        int colCatBase = 2;
+        int colTotal = colCatBase + allCats.Count;
+        int colIncome = colTotal + 1;
+        int colNet = colIncome + 1;
+        int colLimit = hasLimit ? colNet + 1 : 0;
         int colLimitDiff = hasLimit ? colNet + 2 : 0;
-        int colBalance   = hasLimit ? colNet + 3 : colNet + 1;
-        int lastCol      = colBalance;
+        int colBalance = hasLimit ? colNet + 3 : colNet + 1;
+        int lastCol = colBalance;
 
         ws.Cell(1, colDate).Value = "Date";
         for (int i = 0; i < allCats.Count; i++)
             ws.Cell(1, colCatBase + i).Value = allCats[i].CategoryName;
-        ws.Cell(1, colTotal).Value  = "Total Expenses";
+        ws.Cell(1, colTotal).Value = "Total Expenses";
         ws.Cell(1, colIncome).Value = "Income";
-        ws.Cell(1, colNet).Value    = "Net";
+        ws.Cell(1, colNet).Value = "Net";
         if (hasLimit)
         {
-            ws.Cell(1, colLimit).Value     = "Limit";
+            ws.Cell(1, colLimit).Value = "Limit";
             ws.Cell(1, colLimitDiff).Value = "Limit Diff";
         }
         ws.Cell(1, colBalance).Value = "Balance";
@@ -147,10 +147,10 @@ public class ClosedXmlExportService : IExportRenderer
         int row = 2;
         decimal runningBalance = summaries.Count > 0 ? summaries[0].OpeningBalance : 0m;
 
-        decimal allTotalExp    = 0m;
-        decimal allTotalInc    = 0m;
+        decimal allTotalExp = 0m;
+        decimal allTotalInc = 0m;
         decimal allLimitBudget = 0m;
-        decimal allLimitDiff   = 0m;
+        decimal allLimitDiff = 0m;
         var allCatTotals = allCats.ToDictionary(c => c.CategoryId, _ => 0m);
 
         foreach (var summary in summaries)
@@ -175,9 +175,9 @@ public class ClosedXmlExportService : IExportRenderer
                     ws.Cell(row, colCatBase + i).Value = (double)(match?.Amount ?? 0m);
                 }
 
-                ws.Cell(row, colTotal).Value  = (double)day.TotalExpenses;
+                ws.Cell(row, colTotal).Value = (double)day.TotalExpenses;
                 ws.Cell(row, colIncome).Value = (double)day.TotalIncome;
-                ws.Cell(row, colNet).Value    = (double)day.Net;
+                ws.Cell(row, colNet).Value = (double)day.Net;
                 if (hasLimit)
                 {
                     if (day.EffectiveLimit.HasValue)
@@ -195,22 +195,22 @@ public class ClosedXmlExportService : IExportRenderer
                     .FirstOrDefault(c => c.CategoryId == allCats[i].CategoryId);
                 ws.Cell(row, colCatBase + i).Value = (double)(cat?.Amount ?? 0m);
             }
-            ws.Cell(row, colTotal).Value  = (double)summary.MonthTotals.TotalExpenses;
+            ws.Cell(row, colTotal).Value = (double)summary.MonthTotals.TotalExpenses;
             ws.Cell(row, colIncome).Value = (double)summary.MonthTotals.TotalIncome;
-            ws.Cell(row, colNet).Value    = (double)summary.MonthTotals.Net;
+            ws.Cell(row, colNet).Value = (double)summary.MonthTotals.Net;
             if (hasLimit)
             {
-                ws.Cell(row, colLimit).Value     = (double)summary.MonthTotals.AllowedMonthlyBudget;
+                ws.Cell(row, colLimit).Value = (double)summary.MonthTotals.AllowedMonthlyBudget;
                 ws.Cell(row, colLimitDiff).Value = (double)summary.MonthTotals.TotalLimitDiff;
             }
             ws.Cell(row, colBalance).Value = (double)runningBalance;
             ws.Range(row, 1, row, lastCol).Style.Font.Bold = true;
             row++;
 
-            allTotalExp    += summary.MonthTotals.TotalExpenses;
-            allTotalInc    += summary.MonthTotals.TotalIncome;
+            allTotalExp += summary.MonthTotals.TotalExpenses;
+            allTotalInc += summary.MonthTotals.TotalIncome;
             allLimitBudget += summary.MonthTotals.AllowedMonthlyBudget;
-            allLimitDiff   += summary.MonthTotals.TotalLimitDiff;
+            allLimitDiff += summary.MonthTotals.TotalLimitDiff;
             foreach (var cat in summary.MonthTotals.ExpensesByCategory)
                 if (allCatTotals.ContainsKey(cat.CategoryId))
                     allCatTotals[cat.CategoryId] += cat.Amount;
@@ -219,12 +219,12 @@ public class ClosedXmlExportService : IExportRenderer
         ws.Cell(row, colDate).Value = "All Time";
         for (int i = 0; i < allCats.Count; i++)
             ws.Cell(row, colCatBase + i).Value = (double)allCatTotals[allCats[i].CategoryId];
-        ws.Cell(row, colTotal).Value  = (double)allTotalExp;
+        ws.Cell(row, colTotal).Value = (double)allTotalExp;
         ws.Cell(row, colIncome).Value = (double)allTotalInc;
-        ws.Cell(row, colNet).Value    = (double)(allTotalInc - allTotalExp);
+        ws.Cell(row, colNet).Value = (double)(allTotalInc - allTotalExp);
         if (hasLimit)
         {
-            ws.Cell(row, colLimit).Value     = (double)allLimitBudget;
+            ws.Cell(row, colLimit).Value = (double)allLimitBudget;
             ws.Cell(row, colLimitDiff).Value = (double)allLimitDiff;
         }
         ws.Cell(row, colBalance).Value = (double)runningBalance;

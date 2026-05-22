@@ -299,7 +299,8 @@ public class SummaryService
         foreach (var date in allActivityDates)
         {
             var effectiveLimit = GetEffectiveLimit(limitTuples, date);
-            if (!effectiveLimit.HasValue) continue;
+            if (!effectiveLimit.HasValue)
+                continue;
 
             var dayExpenses = expenseByDateMap.TryGetValue(date, out var de) ? de : 0m;
             totalLimitDiff += effectiveLimit.Value - dayExpenses;
@@ -322,8 +323,10 @@ public class SummaryService
         decimal? result = null;
         foreach (var (date, amount) in limits)
         {
-            if (date <= day) result = amount;
-            else break;
+            if (date <= day)
+                result = amount;
+            else
+                break;
         }
         return result;
     }

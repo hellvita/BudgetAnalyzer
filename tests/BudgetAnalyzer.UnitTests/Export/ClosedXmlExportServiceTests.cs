@@ -168,7 +168,7 @@ public class ClosedXmlExportServiceTests
         )).ToList();
 
         var totalExpenses = days.Sum(d => d.Expense);
-        var totalIncome   = days.Sum(d => d.Income);
+        var totalIncome = days.Sum(d => d.Income);
         var allowedBudget = dailyLimit * days.Length;
 
         var totals = new MonthTotals(
@@ -193,9 +193,9 @@ public class ClosedXmlExportServiceTests
         // date + cats + Total Expenses + Income + Net + Limit + Limit Diff + Balance
         var expectedCols = 1 + summary.MonthTotals.ExpensesByCategory.Count + 1 + 1 + 1 + 2 + 1;
         Assert.Equal(expectedCols, ws.LastColumnUsed()!.ColumnNumber());
-        Assert.Equal("Limit",      ws.Cell(1, expectedCols - 2).GetString());
+        Assert.Equal("Limit", ws.Cell(1, expectedCols - 2).GetString());
         Assert.Equal("Limit Diff", ws.Cell(1, expectedCols - 1).GetString());
-        Assert.Equal("Balance",    ws.Cell(1, expectedCols).GetString());
+        Assert.Equal("Balance", ws.Cell(1, expectedCols).GetString());
         wb.Dispose();
     }
 
@@ -227,7 +227,7 @@ public class ClosedXmlExportServiceTests
         int totalsRow = summary.Days.Count + 2;
         // AllowedMonthlyBudget = 50*2 = 100, TotalLimitDiff = 100 - 35 = 65
         Assert.Equal(100.0, ws.Cell(totalsRow, 6).GetDouble());
-        Assert.Equal(65.0,  ws.Cell(totalsRow, 7).GetDouble());
+        Assert.Equal(65.0, ws.Cell(totalsRow, 7).GetDouble());
         wb.Dispose();
     }
 
@@ -286,7 +286,7 @@ public class ClosedXmlExportServiceTests
         var bytes = new ClosedXmlExportService().RenderAllMonthsCombined([]);
         var (wb, ws) = LoadXlsx(bytes);
 
-        Assert.Equal("Date",    ws.Cell(1, 1).GetString());
+        Assert.Equal("Date", ws.Cell(1, 1).GetString());
         Assert.Equal("Balance", ws.Cell(1, ws.LastColumnUsed()!.ColumnNumber()).GetString());
         wb.Dispose();
     }
@@ -346,7 +346,7 @@ public class ClosedXmlExportServiceTests
         // Month April: 1 day, expense=30, income=0
         // Month May:   1 day, expense=50, income=200
         var m1 = BuildSummaryForMonth(2026, 4, 1000m, (new DateOnly(2026, 4, 1), 30m, 0m));
-        var m2 = BuildSummaryForMonth(2026, 5, 970m,  (new DateOnly(2026, 5, 1), 50m, 200m));
+        var m2 = BuildSummaryForMonth(2026, 5, 970m, (new DateOnly(2026, 5, 1), 50m, 200m));
 
         var bytes = new ClosedXmlExportService().RenderAllMonthsCombined([m1, m2]);
         var (wb, ws) = LoadXlsx(bytes);
@@ -356,7 +356,7 @@ public class ClosedXmlExportServiceTests
         int allTimeRow = 8;
         // col layout with 1 cat, no limit: date(1)+Groceries(2)+TotalExp(3)+Income(4)+Net(5)+Balance(6)
         Assert.Equal("All Time", ws.Cell(allTimeRow, 1).GetString());
-        Assert.Equal(80.0,  ws.Cell(allTimeRow, 3).GetDouble()); // 30 + 50
+        Assert.Equal(80.0, ws.Cell(allTimeRow, 3).GetDouble()); // 30 + 50
         Assert.Equal(200.0, ws.Cell(allTimeRow, 4).GetDouble()); // 0 + 200
         Assert.Equal(120.0, ws.Cell(allTimeRow, 5).GetDouble()); // 200 - 80
         wb.Dispose();
@@ -368,7 +368,7 @@ public class ClosedXmlExportServiceTests
         // opening=1000, m1: expense=30 → balance=970 at end of m1
         // m2 opening balance in the summary object (500m) is ignored — balance runs continuously
         var m1 = BuildSummaryForMonth(2026, 4, 1000m, (new DateOnly(2026, 4, 1), 30m, 0m));
-        var m2 = BuildSummaryForMonth(2026, 5, 500m,  (new DateOnly(2026, 5, 1), 50m, 0m));
+        var m2 = BuildSummaryForMonth(2026, 5, 500m, (new DateOnly(2026, 5, 1), 50m, 0m));
 
         var bytes = new ClosedXmlExportService().RenderAllMonthsCombined([m1, m2]);
         var (wb, ws) = LoadXlsx(bytes);
@@ -411,7 +411,7 @@ public class ClosedXmlExportServiceTests
             .Select(c => ws.Cell(1, c).GetString())
             .ToList();
 
-        Assert.Contains(CatName,  headerValues);
+        Assert.Contains(CatName, headerValues);
         Assert.Contains(CatName2, headerValues);
         wb.Dispose();
     }
@@ -420,7 +420,7 @@ public class ClosedXmlExportServiceTests
     public void RenderAllMonthsCombined_TwoMonths_ColumnCount_MatchesUnionOfCategories()
     {
         var m1 = BuildSummaryForMonth(2026, 4, 1000m, (new DateOnly(2026, 4, 1), 30m, 0m));
-        var m2 = BuildSummaryForMonth(2026, 5, 970m,  (new DateOnly(2026, 5, 1), 50m, 0m));
+        var m2 = BuildSummaryForMonth(2026, 5, 970m, (new DateOnly(2026, 5, 1), 50m, 0m));
 
         // Both months use the same single category (CatId/Groceries)
         var bytes = new ClosedXmlExportService().RenderAllMonthsCombined([m1, m2]);
