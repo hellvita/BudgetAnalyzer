@@ -87,8 +87,8 @@ public class SummaryTests : IntegrationTestBase
         var client = CreateAuthenticatedClient(token);
         var cat = await CreateCategoryAsync(client, "Rent");
 
-        await client.PutAsJsonAsync("/api/expenses/2026-10-05/"+cat.Id, new { amount = 800m });
-        await client.PutAsJsonAsync("/api/expenses/2026-10-20/"+cat.Id, new { amount = 200m });
+        await client.PutAsJsonAsync("/api/expenses/2026-10-05/" + cat.Id, new { amount = 800m });
+        await client.PutAsJsonAsync("/api/expenses/2026-10-20/" + cat.Id, new { amount = 200m });
         await client.PutAsJsonAsync("/api/incomes/2026-10-01", new { amount = 3000m });
         await client.PutAsJsonAsync("/api/limits/2026-10-01", new { amount = 50m });
 

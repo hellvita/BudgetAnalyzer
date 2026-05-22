@@ -7,7 +7,7 @@ namespace BudgetAnalyzer.Infrastructure.BackgroundServices;
 public class TempFileCleanupService : BackgroundService
 {
     private static readonly TimeSpan RunInterval = TimeSpan.FromMinutes(30);
-    private static readonly TimeSpan MaxFileAge  = TimeSpan.FromHours(1);
+    private static readonly TimeSpan MaxFileAge = TimeSpan.FromHours(1);
 
     private readonly ITempFileStore _store;
     private readonly ILogger<TempFileCleanupService> _logger;

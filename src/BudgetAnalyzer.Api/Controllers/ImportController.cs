@@ -23,10 +23,10 @@ public class ImportController : ControllerBase
         IImportExecuteService executeService,
         ICurrentUser currentUser)
     {
-        _parseService   = parseService;
+        _parseService = parseService;
         _previewService = previewService;
         _executeService = executeService;
-        _currentUser    = currentUser;
+        _currentUser = currentUser;
     }
 
     /// <summary>Upload an xlsx file. Returns detected non-empty columns + a fileId for subsequent calls.</summary>

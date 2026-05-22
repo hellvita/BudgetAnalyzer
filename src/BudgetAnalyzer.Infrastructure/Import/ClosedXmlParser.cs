@@ -16,7 +16,8 @@ public class ClosedXmlParser : IXlsxParser
         var lastCol = ws.LastColumnUsed()?.ColumnNumber() ?? 0;
         var lastRow = ws.LastRowUsed()?.RowNumber() ?? 0;
 
-        if (lastCol == 0 || lastRow < 2) return Array.Empty<ParsedColumnDto>();
+        if (lastCol == 0 || lastRow < 2)
+            return Array.Empty<ParsedColumnDto>();
 
         var result = new List<ParsedColumnDto>();
 
@@ -83,7 +84,8 @@ public class ClosedXmlParser : IXlsxParser
                 catAmounts[catCol - 1] = transformed;
             }
 
-            if (!rowIsValid) continue;
+            if (!rowIsValid)
+                continue;
 
             if (!TryParseAmount(ws.Cell(row, incomeCol), out var rawIncome))
             {
@@ -116,7 +118,8 @@ public class ClosedXmlParser : IXlsxParser
     private static bool TryParseDate(IXLCell cell, out DateOnly date)
     {
         date = default;
-        if (cell.IsEmpty()) return false;
+        if (cell.IsEmpty())
+            return false;
 
         if (cell.DataType == XLDataType.DateTime)
         {
@@ -149,7 +152,8 @@ public class ClosedXmlParser : IXlsxParser
     private static bool TryParseAmount(IXLCell cell, out decimal amount)
     {
         amount = 0;
-        if (cell.IsEmpty()) return true;
+        if (cell.IsEmpty())
+            return true;
 
         if (cell.DataType == XLDataType.Number)
         {

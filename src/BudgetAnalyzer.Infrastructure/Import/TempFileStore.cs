@@ -27,7 +27,8 @@ public class TempFileStore : ITempFileStore
     public void Delete(string fileId)
     {
         var path = BuildPath(fileId);
-        if (File.Exists(path)) File.Delete(path);
+        if (File.Exists(path))
+            File.Delete(path);
     }
 
     public IEnumerable<(string fileId, DateTime createdAtUtc)> ListAll() =>

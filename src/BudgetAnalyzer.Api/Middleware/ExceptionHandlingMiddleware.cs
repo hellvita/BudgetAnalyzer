@@ -24,11 +24,11 @@ public sealed class ExceptionHandlingMiddleware(
     {
         var (status, title, detail) = exception switch
         {
-            ValidationException e     => (StatusCodes.Status400BadRequest,      "Validation Error",  e.Message),
-            NotFoundException e       => (StatusCodes.Status404NotFound,         "Not Found",         e.Message),
-            ConflictException e       => (StatusCodes.Status409Conflict,         "Conflict",          e.Message),
-            UnauthorizedAccessException => (StatusCodes.Status401Unauthorized,   "Unauthorized",      "Access denied."),
-            _                         => (StatusCodes.Status500InternalServerError, "Server Error",   "An unexpected error occurred."),
+            ValidationException e => (StatusCodes.Status400BadRequest, "Validation Error", e.Message),
+            NotFoundException e => (StatusCodes.Status404NotFound, "Not Found", e.Message),
+            ConflictException e => (StatusCodes.Status409Conflict, "Conflict", e.Message),
+            UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Unauthorized", "Access denied."),
+            _ => (StatusCodes.Status500InternalServerError, "Server Error", "An unexpected error occurred."),
         };
 
         if (status == StatusCodes.Status500InternalServerError)
@@ -36,8 +36,8 @@ public sealed class ExceptionHandlingMiddleware(
 
         var problem = new ProblemDetails
         {
-            Type   = "about:blank",
-            Title  = title,
+            Type = "about:blank",
+            Title = title,
             Status = status,
             Detail = detail,
         };

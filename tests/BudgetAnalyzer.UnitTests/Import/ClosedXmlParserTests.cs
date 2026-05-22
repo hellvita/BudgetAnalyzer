@@ -26,7 +26,8 @@ public class ClosedXmlParserTests : IDisposable
     public void Dispose()
     {
         foreach (var path in _tempFiles)
-            if (File.Exists(path)) File.Delete(path);
+            if (File.Exists(path))
+                File.Delete(path);
     }
 
     private static ColumnMappingDto MakeMapping(

@@ -17,8 +17,8 @@ public class CategoryService
         IUnitOfWork uow)
     {
         _categories = categories;
-        _expenses   = expenses;
-        _uow        = uow;
+        _expenses = expenses;
+        _uow = uow;
     }
 
     public async Task<List<CategoryResponse>> ListAsync(
@@ -116,7 +116,7 @@ public class CategoryService
             throw new ValidationException("Cannot merge a category into itself.");
 
         var source = await GetOwnedAsync(userId, sourceId, ct);
-        _         = await GetOwnedAsync(userId, targetId, ct);
+        _ = await GetOwnedAsync(userId, targetId, ct);
 
         await _expenses.Query()
             .Where(e => e.CategoryId == sourceId)

@@ -26,7 +26,8 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
     public virtual async Task DisposeAsync()
     {
-        if (_createdUserIds.Count == 0) return;
+        if (_createdUserIds.Count == 0)
+            return;
 
         using var scope = Factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -79,7 +80,8 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     protected static Guid GetUserIdFromToken(string token)
     {
         var parts = token.Split('.');
-        if (parts.Length != 3) return Guid.Empty;
+        if (parts.Length != 3)
+            return Guid.Empty;
 
         var payload = parts[1];
         var padded = payload.PadRight(payload.Length + (4 - payload.Length % 4) % 4, '=');
