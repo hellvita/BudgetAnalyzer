@@ -5,11 +5,10 @@ on:
     branches: [main]
 
 jobs:
-  # ── Build & format ──────────────────────────────────────────────────────────
-  # Verifies the solution compiles and that all files match .editorconfig rules.
-  # Fails fast so format issues surface before test runs.
-  build-and-format:
-    name: Build & Format
+  # ── Format check ─────────────────────────────────────────────────────────────
+  # Runs in parallel with build — a format failure surfaces without waiting for build.
+  format-check:
+    name: Format Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,22 +17,46 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Restore
-        run: dotnet restore BudgetAnalyzer.slnx
+      - run: dotnet restore BudgetAnalyzer.slnx
 
-      - name: Build
-        run: dotnet build BudgetAnalyzer.slnx --no-restore --no-incremental
+      - run: dotnet format BudgetAnalyzer.slnx --verify-no-changes
 
-      - name: Check formatting
-        # Exits non-zero if any file would be changed by dotnet format.
-        # Developers should run the pre-commit hook locally to avoid hitting this —
-        # see "Development setup" in README.md.
-        run: dotnet format BudgetAnalyzer.slnx --verify-no-changes
+  # ── Build ────────────────────────────────────────────────────────────────────
+  # Restores, builds, and uploads artifacts so test jobs can use --no-build.
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-  # ── Unit tests ──────────────────────────────────────────────────────────────
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-
+
+      - run: dotnet restore BudgetAnalyzer.slnx
+
+      - run: dotnet build BudgetAnalyzer.slnx --no-restore --no-incremental
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: |
+            **/bin/
+            **/obj/
+
+  # ── Unit tests ───────────────────────────────────────────────────────────────
   unit-tests:
     name: Unit Tests
+    needs: build
     runs-on: ubuntu-latest
+    permissions:
+      checks: write
     steps:
       - uses: actions/checkout@v4
 
@@ -41,19 +64,46 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Restore
-        run: dotnet restore BudgetAnalyzer.slnx
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-
 
-      - name: Run unit tests
-        run: dotnet test tests/BudgetAnalyzer.UnitTests --no-restore --logger "console;verbosity=normal"
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
 
-  # ── Integration tests ───────────────────────────────────────────────────────
+      - run: >
+          dotnet test tests/BudgetAnalyzer.UnitTests
+          --no-build
+          --collect:"XPlat Code Coverage"
+          --logger "trx;LogFileName=unit-results.trx"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-results
+          path: |
+            **/unit-results.trx
+            **/coverage.cobertura.xml
+
+      - uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Unit Test Results
+          path: "**/unit-results.trx"
+          reporter: dotnet-trx
+
+  # ── Integration tests ────────────────────────────────────────────────────────
   # Uses Testcontainers: the test suite spins up its own Postgres Docker container.
   # Docker is pre-installed on ubuntu-latest runners, no extra setup needed.
-  # No secrets required — BudgetApiFactory hardcodes throwaway test credentials.
   integration-tests:
     name: Integration Tests
+    needs: build
     runs-on: ubuntu-latest
+    permissions:
+      checks: write
     steps:
       - uses: actions/checkout@v4
 
@@ -61,8 +111,30 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Restore
-        run: dotnet restore BudgetAnalyzer.slnx
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-
 
-      - name: Run integration tests
-        run: dotnet test tests/BudgetAnalyzer.IntegrationTests --no-restore --logger "console;verbosity=normal"
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
+
+      - run: >
+          dotnet test tests/BudgetAnalyzer.IntegrationTests
+          --no-build
+          --logger "trx;LogFileName=integration-results.trx"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-results
+          path: "**/integration-results.trx"
+
+      - uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Integration Test Results
+          path: "**/integration-results.trx"
+          reporter: dotnet-trx

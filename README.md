@@ -72,12 +72,21 @@ After cloning, install the pre-commit hook once:
 ./scripts/install-hooks.sh
 ```
 
-The hook runs `dotnet format` before every commit. If it reformats any files it aborts the commit so you can review the diff, stage the changes, and commit again:
+The hook runs automatically on every `git commit`:
 
-```bash
-git add -u
-git commit
 ```
+Merge conflict markers...............................................Passed
+Large files (> 500 KB)...............................................Passed
+Code format (dotnet format)..........................................Passed
+Build (dotnet build).................................................Passed
+Unit tests (dotnet test).............................................Passed
+```
+
+- **Code format**: uses `--verify-no-changes` — run `dotnet format BudgetAnalyzer.slnx` manually to fix, then commit.
+- **Build**: incremental; the first run after a fresh clone is slower.
+- **Unit tests**: targets `tests/BudgetAnalyzer.UnitTests` only — integration tests run in CI.
+
+A failed check prints the error output and blocks the commit.
 
 The hook requires `dotnet` in your PATH (already needed to build and run the project).
 

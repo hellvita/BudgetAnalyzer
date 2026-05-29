@@ -1,16 +1,44 @@
-#!/bin/sh
-# Pre-commit hook: runs dotnet format and aborts if any file was changed,
-# giving you a chance to review and stage the formatting fixes before committing.
+#!/usr/bin/env sh
 
-dotnet format BudgetAnalyzer.slnx
+run_check() {
+  local label="$1"; shift
+  local pad_width=60
+  local dots
+  dots=$(printf '%*s' $((pad_width - ${#label})) '' | tr ' ' '.')
+  printf "%s%s" "$label" "$dots"
+  local output; output=$("$@" 2>&1); local code=$?
+  if [ $code -eq 0 ]; then
+    printf "Passed\n"
+  else
+    printf "Failed\n"
+    truncated=$(printf "%s\n" "$output" | head -20)
+    total=$(printf "%s\n" "$output" | wc -l)
+    printf "%s\n" "$truncated"
+    [ "$total" -gt 20 ] && printf "  ... and %d more lines (run the command directly to see all)\n" "$((total - 20))"
+  fi
+  return $code
+}
 
-if ! git diff --quiet; then
-    printf '\n'
-    printf '==> dotnet format changed some files.\n'
-    printf '    Review the diff, stage the changes, and commit again:\n'
-    printf '\n'
-    printf '      git add -u\n'
-    printf '      git commit\n'
-    printf '\n'
-    exit 1
-fi
+failed=0
+
+run_check "Merge conflict markers" sh -c \
+  'git diff --cached --name-only --diff-filter=ACMR | xargs grep -lE "^(<{7}|>{7}|={7})" 2>/dev/null | grep -q . && exit 1 || exit 0'
+[ $? -ne 0 ] && failed=1
+
+run_check "Large files (> 500 KB)" sh -c \
+  'git diff --cached --name-only --diff-filter=ACMR | xargs -I{} find {} -maxdepth 0 -size +500k 2>/dev/null | grep -q . && exit 1 || exit 0'
+[ $? -ne 0 ] && failed=1
+
+run_check "Code format (dotnet format)" \
+  dotnet format BudgetAnalyzer.slnx --verify-no-changes --verbosity quiet
+[ $? -ne 0 ] && failed=1
+
+run_check "Build (dotnet build)" \
+  dotnet build BudgetAnalyzer.slnx --no-restore -v quiet
+[ $? -ne 0 ] && failed=1
+
+run_check "Unit tests (dotnet test)" \
+  dotnet test tests/BudgetAnalyzer.UnitTests --no-build -v quiet
+[ $? -ne 0 ] && failed=1
+
+exit $failed
