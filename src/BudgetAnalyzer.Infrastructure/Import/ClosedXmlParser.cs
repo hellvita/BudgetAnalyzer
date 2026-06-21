@@ -112,8 +112,15 @@ public class ClosedXmlParser : IXlsxParser
         return wb.Worksheets.First();
     }
 
+    // Only fully-specified day-level dates are accepted. We deliberately do NOT
+    // fall back to a lenient DateOnly.TryParse: that coerces partial values such
+    // as a "2025-05" month-grouping/summary row into 2025-05-01, which then
+    // collides with the genuine 2025-05-01 daily row (duplicate dates) and, on
+    // import, silently overwrites real data. Rows that don't match a full date
+    // here are treated as non-data rows and skipped by the caller.
     private static readonly string[] StringDateFormats =
-        ["dd.MM.yyyy H:mm:ss", "dd.MM.yyyy HH:mm:ss", "dd.MM.yyyy", "d.M.yyyy"];
+        ["dd.MM.yyyy H:mm:ss", "dd.MM.yyyy HH:mm:ss", "dd.MM.yyyy", "d.M.yyyy",
+         "yyyy-MM-dd", "yyyy/M/d", "yyyy/MM/dd"];
 
     private static bool TryParseDate(IXLCell cell, out DateOnly date)
     {
@@ -146,7 +153,7 @@ public class ClosedXmlParser : IXlsxParser
             return true;
         }
 
-        return DateOnly.TryParse(raw, out date);
+        return false;
     }
 
     private static bool TryParseAmount(IXLCell cell, out decimal amount)

@@ -132,6 +132,34 @@ public class ClosedXmlParserTests : IDisposable
     }
 
     [Fact]
+    public void ReadRows_PartialYearMonthDate_IsSkippedNotCoercedToFirstOfMonth()
+    {
+        // A "2025-05" month-grouping row sits above the genuine "2025-05-01"
+        // daily row. A lenient parse would coerce "2025-05" into 2025-05-01,
+        // colliding with the real first-of-month row (duplicate dates). The
+        // month row must be skipped instead.
+        var path = CreateSingleSheetXlsx(ws =>
+        {
+            ws.Cell(1, 1).Value = "Date";
+            ws.Cell(1, 2).Value = "Expense";
+            ws.Cell(1, 3).Value = "Income";
+            ws.Cell(2, 1).Value = "2025-05";      // month-grouping row
+            ws.Cell(2, 2).Value = 999.0;
+            ws.Cell(2, 3).Value = 0.0;
+            ws.Cell(3, 1).Value = "2025-05-01";   // genuine daily row
+            ws.Cell(3, 2).Value = 100.0;
+            ws.Cell(3, 3).Value = 0.0;
+        });
+
+        var (rows, skipped) = new ClosedXmlParser().ReadRows(path, MakeMapping(0, [1], 2));
+
+        Assert.Single(rows);
+        Assert.Equal(new DateOnly(2025, 5, 1), rows[0].Date);
+        Assert.Equal(100m, rows[0].CategoryAmounts[1]);
+        Assert.Equal(1, skipped);
+    }
+
+    [Fact]
     public void ReadRows_NonNumericExpenseCell_SkipsRow()
     {
         var path = CreateSingleSheetXlsx(ws =>
