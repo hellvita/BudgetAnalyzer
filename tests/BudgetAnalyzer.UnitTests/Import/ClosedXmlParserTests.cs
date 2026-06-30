@@ -3,12 +3,16 @@ using BudgetAnalyzer.Application.Import.Dtos;
 using BudgetAnalyzer.Domain.Exceptions;
 using BudgetAnalyzer.Infrastructure.Import;
 using ClosedXML.Excel;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace BudgetAnalyzer.UnitTests.Import;
 
 public class ClosedXmlParserTests : IDisposable
 {
     private readonly List<string> _tempFiles = [];
+
+    private static ClosedXmlParser CreateParser() =>
+        new(NullLogger<ClosedXmlParser>.Instance);
 
     private string CreateTempXlsx(Action<IXLWorkbook> configure)
     {
@@ -51,7 +55,7 @@ public class ClosedXmlParserTests : IDisposable
             }
         });
 
-        var columns = new ClosedXmlParser().DetectColumns(path);
+        var columns = CreateParser().DetectColumns(path);
 
         Assert.Equal(3, columns.Count);
         Assert.Equal("Date", columns[0].Header);
@@ -68,7 +72,7 @@ public class ClosedXmlParserTests : IDisposable
             wb.Worksheets.Add("Sheet2").Cell(1, 1).Value = "Date";
         });
 
-        Assert.Throws<ValidationException>(() => new ClosedXmlParser().DetectColumns(path));
+        Assert.Throws<ValidationException>(() => CreateParser().DetectColumns(path));
     }
 
     [Fact]
@@ -84,7 +88,7 @@ public class ClosedXmlParserTests : IDisposable
             ws.Cell(2, 3).Value = 50.0;
         });
 
-        var columns = new ClosedXmlParser().DetectColumns(path);
+        var columns = CreateParser().DetectColumns(path);
 
         Assert.Equal(2, columns.Count);
         Assert.DoesNotContain(columns, c => c.Header == "EmptyCol");
@@ -104,7 +108,7 @@ public class ClosedXmlParserTests : IDisposable
             ws.Cell(2, 3).Value = 0.0;
         });
 
-        var (rows, skipped) = new ClosedXmlParser().ReadRows(path, MakeMapping(0, [1], 2));
+        var (rows, skipped) = CreateParser().ReadRows(path, MakeMapping(0, [1], 2));
 
         Assert.Single(rows);
         Assert.Equal(new DateOnly(2025, 5, 11), rows[0].Date);
@@ -124,7 +128,7 @@ public class ClosedXmlParserTests : IDisposable
             ws.Cell(2, 3).Value = 0.0;
         });
 
-        var (rows, skipped) = new ClosedXmlParser().ReadRows(path, MakeMapping(0, [1], 2));
+        var (rows, skipped) = CreateParser().ReadRows(path, MakeMapping(0, [1], 2));
 
         Assert.Single(rows);
         Assert.Equal(new DateOnly(2025, 5, 11), rows[0].Date);
@@ -151,7 +155,7 @@ public class ClosedXmlParserTests : IDisposable
             ws.Cell(3, 3).Value = 0.0;
         });
 
-        var (rows, skipped) = new ClosedXmlParser().ReadRows(path, MakeMapping(0, [1], 2));
+        var (rows, skipped) = CreateParser().ReadRows(path, MakeMapping(0, [1], 2));
 
         Assert.Single(rows);
         Assert.Equal(new DateOnly(2025, 5, 1), rows[0].Date);
@@ -175,7 +179,7 @@ public class ClosedXmlParserTests : IDisposable
             ws.Cell(3, 3).Value = 0.0;
         });
 
-        var (rows, skipped) = new ClosedXmlParser().ReadRows(path, MakeMapping(0, [1], 2));
+        var (rows, skipped) = CreateParser().ReadRows(path, MakeMapping(0, [1], 2));
 
         Assert.Single(rows);
         Assert.Equal(1, skipped);
@@ -194,7 +198,7 @@ public class ClosedXmlParserTests : IDisposable
             ws.Cell(2, 3).Value = 0.0;
         });
 
-        var (rows, _) = new ClosedXmlParser().ReadRows(path, MakeMapping(0, [1], 2, scale: 1000m));
+        var (rows, _) = CreateParser().ReadRows(path, MakeMapping(0, [1], 2, scale: 1000m));
 
         Assert.Single(rows);
         Assert.Equal(350m, rows[0].CategoryAmounts[1]);
@@ -213,7 +217,7 @@ public class ClosedXmlParserTests : IDisposable
             ws.Cell(2, 3).Value = 0.0;
         });
 
-        var (rows, _) = new ClosedXmlParser().ReadRows(path, MakeMapping(0, [1], 2, scale: 1m, invert: true));
+        var (rows, _) = CreateParser().ReadRows(path, MakeMapping(0, [1], 2, scale: 1m, invert: true));
 
         Assert.Single(rows);
         Assert.Equal(-100m, rows[0].CategoryAmounts[1]);

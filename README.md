@@ -46,6 +46,7 @@ Edit `.env`:
 - Set `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` (used by Docker Compose).
 - Set `ConnectionStrings__Default` to the full Postgres connection string for the app and EF tools.
 - Generate and set `Jwt__SigningKey`: `openssl rand -base64 64`
+- Set `AllowedHosts` for the environment (dev default in `.env.example`; use your real domain(s) in production).
 
 **2. Start Postgres:**
 
@@ -57,10 +58,11 @@ docker compose up -d
 
 ```bash
 export $(grep -v '^#' .env | grep '__' | xargs)
+export $(grep -v '^#' .env | grep '^AllowedHosts=' | xargs)
 dotnet run --project src/BudgetAnalyzer.Api
 ```
 
-The `grep '__'` filter selects only ASP.NET Core configuration vars (double-underscore separator) and skips the Docker-only `POSTGRES_*` vars.
+The first line exports ASP.NET Core config vars (`ConnectionStrings__*`, `Jwt__*`). The second line exports `AllowedHosts`, which is a top-level key without `__` in its name. Docker-only `POSTGRES_*` vars are skipped by both greps.
 
 The API starts on `http://localhost:5048` by default.
 
