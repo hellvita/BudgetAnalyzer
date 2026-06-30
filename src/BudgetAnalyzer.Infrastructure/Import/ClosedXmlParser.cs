@@ -3,11 +3,14 @@ using BudgetAnalyzer.Application.Import;
 using BudgetAnalyzer.Application.Import.Dtos;
 using BudgetAnalyzer.Domain.Exceptions;
 using ClosedXML.Excel;
+using Microsoft.Extensions.Logging;
 
 namespace BudgetAnalyzer.Infrastructure.Import;
 
-public class ClosedXmlParser : IXlsxParser
+public class ClosedXmlParser(ILogger<ClosedXmlParser> logger) : IXlsxParser
 {
+    private readonly ILogger<ClosedXmlParser> _logger = logger;
+
     public IReadOnlyList<ParsedColumnDto> DetectColumns(string filePath)
     {
         using var wb = new XLWorkbook(filePath);
@@ -122,7 +125,7 @@ public class ClosedXmlParser : IXlsxParser
         ["dd.MM.yyyy H:mm:ss", "dd.MM.yyyy HH:mm:ss", "dd.MM.yyyy", "d.M.yyyy",
          "yyyy-MM-dd", "yyyy/M/d", "yyyy/MM/dd"];
 
-    private static bool TryParseDate(IXLCell cell, out DateOnly date)
+    private bool TryParseDate(IXLCell cell, out DateOnly date)
     {
         date = default;
         if (cell.IsEmpty())
@@ -141,7 +144,10 @@ public class ClosedXmlParser : IXlsxParser
                 date = DateOnly.FromDateTime(DateTime.FromOADate(cell.GetDouble()));
                 return true;
             }
-            catch { /* fall through */ }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Failed to parse OADate from numeric cell");
+            }
         }
 
         var raw = cell.GetString().Trim();
